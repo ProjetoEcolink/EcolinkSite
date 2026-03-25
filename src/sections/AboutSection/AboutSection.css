@@ -1,0 +1,240 @@
+/* =========================================
+   1. ESTRUTURA GERAL
+   ========================================= */
+.about-section {
+    width: 100%;
+    padding: 8rem 0; /* Mais espaço vertical */
+    background-color: var(--bg-primary); /* Adapta ao Light/Dark mode */
+    color: var(--text-description);
+    font-family: 'Inter', system-ui, sans-serif;
+    border-top: 1px solid var(--ui-border);
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+}
+
+.about-container {
+    max-width: 1440px; /* Alinhado ao layout principal */
+    width: 90%;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 6rem;
+}
+
+@media (max-width: 1024px) {
+    .about-container {
+        flex-direction: column;
+        gap: 5rem;
+    }
+}
+
+/* =========================================
+   2. TEXTOS, MANIFESTO E PILARES (ESQUERDA)
+   ========================================= */
+.about-text-content {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+}
+
+.about-badge {
+    display: inline-block;
+    color: var(--brand-main);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+}
+
+.about-title {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    margin-bottom: 2rem;
+    color: var(--text-main);
+}
+
+.text-highlight {
+    color: var(--brand-main);
+}
+
+.about-manifesto {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 3rem;
+    padding-left: 1.5rem;
+    border-left: 3px solid rgba(16, 185, 129, 0.3); /* Linha sutil verde */
+}
+
+.about-manifesto p {
+    font-size: 1.125rem;
+    color: var(--text-description);
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* Os Novos Pilares Estratégicos */
+.about-pillars {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.pillar-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    background-color: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--ui-border);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.pillar-item:hover {
+    transform: translateX(10px);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.pillar-icon {
+    font-size: 1.5rem;
+    background-color: rgba(16, 185, 129, 0.1);
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.pillar-text h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.1rem;
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+.pillar-text p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-description);
+    line-height: 1.5;
+}
+
+/* =========================================
+   3. VISUAL INOVADOR (TECH CORE - DIREITA)
+   ========================================= */
+.about-visual-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 500px;
+}
+
+.tech-core-container {
+    position: relative;
+    width: 360px; /* Aumentado para dar mais presença */
+    height: 360px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Brilho de fundo central adaptativo */
+.tech-glow {
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    background-color: var(--brand-main);
+    opacity: 0.15;
+    filter: blur(80px);
+    border-radius: 50%;
+    animation: pulseGlow 4s infinite alternate ease-in-out;
+}
+
+/* Anéis de Economia Circular */
+.tech-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px dashed rgba(16, 185, 129, 0.4);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.ring-1 { width: 100%; height: 100%; animation: spin 30s linear infinite; border-style: dotted; border-width: 2px; }
+.ring-2 { width: 75%; height: 75%; border: 1px solid rgba(16, 185, 129, 0.2); animation: spinReverse 20s linear infinite; }
+.ring-3 { width: 50%; height: 50%; animation: spin 15s linear infinite; }
+
+/* Núcleo central */
+.tech-core {
+    position: relative;
+    z-index: 2;
+    width: 90px;
+    height: 90px;
+    background: var(--bg-primary); /* Adapta a cor ao fundo */
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--brand-main);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--brand-main);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.2), inset 0 0 15px rgba(16, 185, 129, 0.1);
+}
+
+.core-icon {
+    width: 45px;
+    height: 45px;
+    animation: pulseCore 3s infinite;
+}
+
+/* Nós flutuantes */
+.floating-node {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: var(--brand-main);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--brand-main);
+}
+
+.node-a { top: 10%; left: 20%; animation: float 4s infinite ease-in-out; }
+.node-b { bottom: 15%; right: 15%; animation: float 5s infinite alternate-reverse ease-in-out; }
+.node-c { top: 40%; right: -5%; animation: float 6s infinite ease-in-out; }
+
+/* =========================================
+   4. ANIMAÇÕES (KEYFRAMES)
+   ========================================= */
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes spinReverse {
+    0% { transform: translate(-50%, -50%) rotate(360deg); }
+    100% { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+@keyframes pulseGlow {
+    0% { transform: scale(0.8); opacity: 0.1; }
+    100% { transform: scale(1.2); opacity: 0.2; }
+}
+
+@keyframes pulseCore {
+    0%, 100% { opacity: 0.8; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes float {
+    0% { transform: translateY(0px) translateX(0px); }
+    50% { transform: translateY(-15px) translateX(10px); }
+    100% { transform: translateY(0px) translateX(0px); }
+}
