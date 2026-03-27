@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Navbar.css';
+import { Link, useLocation } from 'react-router-dom';
+
 
 export default function Navbar() {
   const [activeSection, setActiveSection] = useState('home');
@@ -62,9 +64,10 @@ export default function Navbar() {
               {theme === 'light' ? '🌙' : '☀️'}
             </button>
 
-            <button className="nav-cta" onClick={closeMenu}>
-              Acesso Antecipado
-            </button>
+            {/* Substitua o <button> de Acesso Antecipado por este <Link> */}
+            <Link to="/cadastro" className="nav-cta" onClick={closeMenu}>
+              Criar Conta
+            </Link>
           </div>
         </div>
 
