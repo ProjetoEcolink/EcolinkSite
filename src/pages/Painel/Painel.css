@@ -1,0 +1,168 @@
+/* =========================================
+   PÁGINA DO PAINEL DO VENDEDOR
+   ========================================= */
+.painel-page {
+    min-height: 100vh;
+    padding: 8rem 1.5rem 4rem 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background-color: var(--bg-primary);
+}
+
+.painel-container {
+    width: 100%;
+    max-width: 700px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 20px;
+    padding: 3rem 2.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+.painel-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.painel-header h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.painel-header p {
+    color: var(--text-description);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* --- FORMULÁRIO --- */
+.painel-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.flex-2 {
+    flex: 2;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.form-input {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-input:focus {
+    border-color: var(--brand-main);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* --- ÁREA DE UPLOAD (DROPZONE) --- */
+.image-dropzone {
+    width: 100%;
+    padding: 2.5rem 1rem;
+    border: 2px dashed var(--ui-border);
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-dropzone:hover {
+    border-color: var(--brand-main);
+    background-color: rgba(from var(--brand-main) r g b / 0.05);
+}
+
+.dropzone-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+}
+
+.image-dropzone p {
+    color: var(--text-main);
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.dropzone-hint {
+    color: var(--text-description);
+    font-size: 0.8rem;
+}
+
+/* --- BOTÃO SUBMIT --- */
+.btn-submit {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 1.15rem;
+    background-color: var(--brand-main);
+    color: var(--text-white);
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background-color: var(--brand-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+}

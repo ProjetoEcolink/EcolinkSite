@@ -8,9 +8,9 @@ import Footer from './components/layout/Footer';
 // Páginas do Sistema
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Cadastro from './pages/Cadastro';
-import Marketplace from './pages/Marketplace';
-import Painel from './pages/Painel';
+import Cadastro from './pages/Cadastro/Cadastro';
+import Marketplace from './pages/Marketplace/Marketplace';
+import Painel from './pages/Painel/Painel';
 
 function App() {
   return (
