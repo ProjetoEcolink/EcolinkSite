@@ -1,0 +1,183 @@
+/* =========================================
+   NAVBAR (Usando o Tema Global)
+   ========================================= */
+.navbar {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    
+    /* Usa a variável global de fundo */
+    background-color: rgba(from var(--bg-primary) r g b / 0.85); 
+    
+    border-bottom: 1px solid var(--ui-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.nav-container {
+    max-width: 1440px; 
+    width: 90%;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: 5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative; /* Necessário para centralizar os links de forma absoluta */
+}
+
+/* Container que engloba links e ações */
+.nav-menu {
+    flex: 1; /* Ocupa o restante do espaço */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Empurra as ações (botões) para a direita */
+    gap: 2.5rem;
+}
+
+/* Botão Menu (Escondido no Desktop) */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+/* =========================================
+   LOGO E LINKS
+   ========================================= */
+.nav-logo {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-main); /* Usa a cor de texto global do tema */
+}
+
+.text-eco {
+    color: var(--brand-main); /* Realce verde */
+}
+
+.nav-links {
+    position: absolute; /* Centraliza perfeitamente em relação ao nav-container */
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+}
+
+.nav-links a {
+    color: var(--text-description); /* Usa a cor de texto secundária */
+    text-decoration: none;
+    font-size: 1.05rem; 
+    font-weight: 600;   /* Peso fixo para evitar glitch */
+    transition: color 0.3s ease;
+    position: relative;
+    padding-bottom: 0.25rem; 
+}
+
+/* Hover e Active */
+.nav-links a:hover,
+.nav-links a.active {
+    color: var(--brand-main);
+}
+
+/* Barrinha animada (mantida conforme solicitado) */
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    width: 0; 
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--brand-main);
+    transition: width 0.3s ease;
+}
+
+.nav-links a:hover::after,
+.nav-links a.active::after {
+    width: 100%;
+}
+
+/* =========================================
+   AÇÕES (BOTÃO TEMA E CTA)
+   ========================================= */
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    color: var(--text-main);
+    transition: background-color 0.3s ease;
+}
+
+.nav-cta {
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--brand-main);
+    background-color: transparent;
+    color: var(--brand-main);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.nav-cta:hover {
+    background-color: var(--brand-main);
+    color: var(--text-white); /* Texto branco dentro do verde */
+}
+
+/* =========================================
+   RESPONSIVIDADE (Mobile)
+   ========================================= */
+@media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .nav-menu {
+        position: fixed;
+        top: 5rem; /* Abaixo da Navbar */
+        left: -100%; /* Fora da tela */
+        width: 100%;
+        height: calc(100vh - 5rem);
+        background-color: var(--bg-primary);
+        flex-direction: column;
+        justify-content: flex-start;
+        padding-top: 3rem;
+        gap: 2.5rem;
+        transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        border-top: 1px solid var(--ui-border);
+    }
+
+    .nav-menu.open {
+        left: 0; /* Desliza pra dentro */
+    }
+
+    .nav-links {
+        position: relative; /* Desativa a centralização absoluta no celular */
+        left: 0;
+        transform: none;
+        flex-direction: column;
+        gap: 2rem;
+        text-align: center;
+    }
+
+    .nav-actions {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+}
