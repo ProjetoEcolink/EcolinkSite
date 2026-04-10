@@ -76,7 +76,7 @@ export default function Login() {
                 </div>
 
                 <div className="auth-header">
-                    <h2>Bem-vindo de volta</h2>
+                    <h2>Bem-vindo</h2>
                     <p>Acesse o marketplace e gerencie seus resíduos eletrônicos.</p>
                 </div>
 
