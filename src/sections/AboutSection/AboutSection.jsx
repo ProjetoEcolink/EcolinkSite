@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-    import React from 'react';
-=======
 import React from 'react';
->>>>>>> bdeba10740cdfe17dba7c3475c9efb822e484128
 import './AboutSection.css';
 
 export default function AboutSection() {

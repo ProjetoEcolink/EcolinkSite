@@ -1,70 +1,84 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 export default function Navbar() {
-  const [activeSection, setActiveSection] = useState('home');
-  const [theme, setTheme] = useState('dark');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navigate = useNavigate();
+    // Busca o tema do sistema ou localStorage para não resetar
+    const [theme, setTheme] = useState(() => {
+        return localStorage.getItem('theme') || document.documentElement.getAttribute('data-theme') || 'dark';
+    });
+    const [nome, setNome] = useState('');
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['home', 'o-problema', 'funcionalidades', 'quem-somos'];
-      const scrollPosition = window.scrollY + 100;
-      for (const section of sections) {
-        const element = document.getElementById(section);
-        if (element && scrollPosition >= element.offsetTop && scrollPosition < element.offsetTop + element.offsetHeight) {
-          setActiveSection(section);
+    useEffect(() => {
+        const userStr = localStorage.getItem('usuario');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            setNome(user.nome ? user.nome.split(' ')[0] : 'Usuário');
+        } else {
+            setNome('');
         }
-      }
+    }, [location]);
+
+    // Aplica o tema e salva no localStorage
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+    const goToSection = (section) => {
+        // CORREÇÃO AQUI: Se não estiver na /home, navega para /home primeiro
+        if (location.pathname !== '/home') {
+            navigate('/home');
+            
+            // Aguarda a página carregar para fazer o scroll
+            setTimeout(() => {
+                const element = document.getElementById(section);
+                if (element) element.scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+        } else {
+            // Se já estiver na /home, apenas faz o scroll
+            const element = document.getElementById(section);
+            if (element) element.scrollIntoView({ behavior: 'smooth' });
+        }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
-  const abrirAuth = (modo) => {
-    closeMenu();
-    navigate(`/auth?modo=${modo}`);
-  };
+    return (
+        <nav className="navbar">
+            <div className="nav-container">
+                <div className="nav-logo" onClick={() => goToSection('home')} style={{ cursor: 'pointer' }}>
+                    Eco<span className="text-eco">Link</span>
+                </div>
 
-  return (
-    <nav className="navbar">
-      <div className="nav-container">
-        <div className="nav-logo">
-          Eco<span className="text-eco">Link</span>
-        </div>
-        <button className="mobile-menu-btn" onClick={toggleMenu} aria-label="Abrir menu">
-          {isMenuOpen ? '✕' : '☰'}
-        </button>
-        <div className={`nav-menu ${isMenuOpen ? 'open' : ''}`}>
-          <div className="nav-links">
-            <a href="#home" onClick={closeMenu} className={activeSection === 'home' ? 'active' : ''}>Home</a>
-            <a href="#o-problema" onClick={closeMenu} className={activeSection === 'o-problema' ? 'active' : ''}>O Problema</a>
-            <a href="#funcionalidades" onClick={closeMenu} className={activeSection === 'funcionalidades' ? 'active' : ''}>Funcionalidades</a>
-            <a href="#quem-somos" onClick={closeMenu} className={activeSection === 'quem-somos' ? 'active' : ''}>Quem Somos</a>
-          </div>
-          <div className="nav-actions">
-            <button onClick={() => { toggleTheme(); closeMenu(); }} className="theme-toggle" aria-label="Mudar tema">
-              {theme === 'light' ? '🌙' : '☀️'}
-            </button>
-            <button className="nav-btn-login" onClick={() => abrirAuth('login')}>
-              Login
-            </button>
-            <button className="nav-btn-cadastro" onClick={() => abrirAuth('cadastro')}>
-              Cadastrar
-            </button>
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
+                <div className="nav-menu">
+                    <div className="nav-links">
+                        <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
+                        <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
+                        <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
+                    </div>
+                </div>
+
+                <div className="nav-actions">
+                    {nome ? (
+                        <Link to="/profile" className="nav-user-link">
+                            Olá, <span>{nome}</span>
+                        </Link>
+                    ) : (
+                        <div className="nav-auth-group">
+                            <Link to="/login" className="nav-link-login">Entrar</Link>
+                            <Link to="/register" className="nav-cta">Criar Conta</Link>
+                        </div>
+                    )}
+
+                    <button onClick={toggleTheme} className="theme-toggle-nav" title="Alternar Tema">
+                        {theme === 'light' ? '🌙' : '☀️'}
+                    </button>
+                </div>
+            </div>
+        </nav>
+    );
 }
