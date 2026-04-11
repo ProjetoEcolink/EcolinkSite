@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 export default function Navbar() {
-    // Busca o tema do sistema ou localStorage para não resetar
     const [theme, setTheme] = useState(() => {
         return localStorage.getItem('theme') || document.documentElement.getAttribute('data-theme') || 'dark';
     });
@@ -22,7 +21,6 @@ export default function Navbar() {
         }
     }, [location]);
 
-    // Aplica o tema e salva no localStorage
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
@@ -31,17 +29,13 @@ export default function Navbar() {
     const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
     const goToSection = (section) => {
-        // CORREÇÃO AQUI: Se não estiver na /home, navega para /home primeiro
         if (location.pathname !== '/home') {
             navigate('/home');
-            
-            // Aguarda a página carregar para fazer o scroll
             setTimeout(() => {
                 const element = document.getElementById(section);
                 if (element) element.scrollIntoView({ behavior: 'smooth' });
             }, 150);
         } else {
-            // Se já estiver na /home, apenas faz o scroll
             const element = document.getElementById(section);
             if (element) element.scrollIntoView({ behavior: 'smooth' });
         }
@@ -59,6 +53,8 @@ export default function Navbar() {
                         <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
                         <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
                         <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
+                        <Link to="/marketplace" className="nav-link-btn">Marketplace</Link>
+                        <Link to="/painel" className="nav-link-btn">Painel</Link>
                     </div>
                 </div>
 

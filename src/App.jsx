@@ -15,8 +15,11 @@ import AboutSection from './sections/AboutSection/AboutSection';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import Profile from './pages/Profile/Profile';
+import Cadastro from './pages/Cadastro/Cadastro';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Marketplace from './pages/Marketplace/Marketplace';
+import Painel from './pages/Painel/Painel';
 
-// Landing Page agora fica em uma rota separada
 const LandingPage = () => (
   <>
     <section id="home"><HeroSection /></section>
@@ -28,9 +31,7 @@ const LandingPage = () => (
 
 const LayoutHandler = ({ children }) => {
   const location = useLocation();
-  
-  // Adicionamos o "/" (raiz) na lista de ocultar Navbar/Footer, pois agora é o Login
-  const hideLayout = ['/', '/login', '/register'].includes(location.pathname);
+  const hideLayout = ['/', '/login', '/register', '/cadastro'].includes(location.pathname);
 
   return (
     <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -48,16 +49,15 @@ function App() {
     <BrowserRouter>
       <LayoutHandler>
         <Routes>
-          {/* MUDANÇA AQUI: O Login agora é a tela inicial */}
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
-          
-          {/* Landing Page acessível via /home */}
           <Route path="/home" element={<LandingPage />} />
-          
           <Route path="/register" element={<Register />} />
+          <Route path="/cadastro" element={<Cadastro />} />
           <Route path="/profile" element={<Profile />} />
-          
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/painel" element={<Painel />} />
           <Route path="*" element={
             <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
               <h1>404</h1>
