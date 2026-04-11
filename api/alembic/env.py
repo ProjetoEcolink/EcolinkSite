@@ -8,12 +8,6 @@ import sys
 # Add project root to path
 sys.path.append(os.getcwd())
 
-<<<<<<< HEAD
-
-
-from infrastructure.models.lote import LoteModel
-=======
->>>>>>> origin/master
 from infrastructure.database import Base
 from infrastructure.models.user import UserModel  # Import models to register them
 
