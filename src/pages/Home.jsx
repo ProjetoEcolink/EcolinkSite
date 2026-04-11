@@ -13,4 +13,8 @@ export default function Home() {
             <AboutSection />
         </>
     );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/master

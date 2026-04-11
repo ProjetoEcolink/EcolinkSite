@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* =========================================
    NAVBAR (Usando o Tema Global)
    ========================================= */
@@ -95,10 +96,83 @@
     height: 2px;
     bottom: 0;
     left: 0;
+=======
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--ui-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    font-family: 'Inter', system-ui, sans-serif;
+    backdrop-filter: blur(10px);
+}
+
+.nav-container {
+    width: 100%;
+    max-width: 1200px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* Esquerda, Centro, Direita */
+    align-items: center;
+    padding: 0 24px;
+}
+
+/* Esquerda */
+.nav-logo {
+    justify-self: start;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-main);
+    cursor: pointer;
+    letter-spacing: -0.02em;
+}
+
+.text-eco { color: var(--brand-main); }
+
+/* Centro */
+.nav-links {
+    display: flex;
+    gap: 2.5rem;
+}
+
+.nav-link-btn {
+    background: none;
+    border: none;
+    color: var(--text-description);
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 0;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-link-btn:hover {
+    color: var(--brand-main);
+}
+
+/* Sublinhado elegante no hover */
+.nav-link-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+>>>>>>> origin/master
     background-color: var(--brand-main);
     transition: width 0.3s ease;
 }
 
+<<<<<<< HEAD
 .nav-links a:hover::after,
 .nav-links a.active::after {
     width: 100%;
@@ -133,10 +207,82 @@
     font-size: 0.9rem;
     font-weight: 600;
     transition: all 0.3s ease;
+=======
+.nav-link-btn:hover::after {
+    width: 100%;
+}
+
+/* Direita */
+.nav-actions {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-user-link {
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 0.95rem; /* Um pouco menor para elegância */
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Espaço entre o "Olá," e o "Lucas" */
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Efeito de destaque quando passa o mouse */
+.nav-user-link:hover {
+    background-color: var(--ui-border); /* Fundo sutil para indicar clique */
+    transform: translateY(-1px);
+}
+
+.nav-user-link span {
+    color: var(--brand-main); /* O verde EcoLink */
+    font-weight: 700;
+    position: relative;
+}
+
+/* Linha decorativa embaixo do nome que aparece no hover (opcional, fica bem pro) */
+.nav-user-link:hover span::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--brand-main);
+    border-radius: 2px;
+}
+
+.theme-toggle-nav {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+
+.nav-cta {
+    background-color: transparent;
+    color: var(--brand-main); 
+    border: 1px solid var(--brand-main); 
+    padding: 10px 22px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+>>>>>>> origin/master
 }
 
 .nav-cta:hover {
     background-color: var(--brand-main);
+<<<<<<< HEAD
     color: var(--text-white); /* Texto branco dentro do verde */
 }
 
@@ -180,4 +326,14 @@
         flex-direction: column;
         gap: 1.5rem;
     }
+=======
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Mobile */
+@media (max-width: 850px) {
+    .nav-links { display: none; }
+    .nav-container { grid-template-columns: 1fr 1fr; }
+>>>>>>> origin/master
 }

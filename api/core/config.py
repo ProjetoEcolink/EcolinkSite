@@ -5,8 +5,13 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Clean Architecture API"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
+<<<<<<< HEAD
     DATABASE_URL: str = "postgresql://postgres:baladegoma123@db.kgigumurkqtxniipqvds.supabase.co:5432/postgres"   
      
+=======
+    DATABASE_URL: str = "postgresql://postgres:postgres@db:5432/app_db"
+
+>>>>>>> origin/master
     class Config:
         env_file = ".env"
 

@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
+<<<<<<< HEAD
 from pydantic import BaseModel
 import bcrypt
+=======
+>>>>>>> origin/master
 from sqlalchemy.orm import Session
 from transport.http.v1.schemas.user import CreateUserRequest, UserResponse
 from application.users.create_user_use_case import CreateUserUseCase
@@ -10,12 +13,15 @@ from infrastructure.database import get_db
 
 router = APIRouter()
 
+<<<<<<< HEAD
 # --- NOVO MOLDE (SCHEMA) APENAS PARA O LOGIN ---
 class LoginRequest(BaseModel):
     email: str
     password: str
 # -----------------------------------------------
 
+=======
+>>>>>>> origin/master
 @router.post("/users", response_model=UserResponse)
 def create_user(request: CreateUserRequest, db: Session = Depends(get_db)):
     repository = SQLAlchemyUserRepository(db)
@@ -35,6 +41,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         return user
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+<<<<<<< HEAD
 
 # =======================================================
 #               NOVA ROTA DE LOGIN
@@ -63,3 +70,5 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             "email": user.email
         }
     }
+=======
+>>>>>>> origin/master
