@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* src/index.css */
+
+/* =========================================
+   DEFINIÇÃO DE TEMAS GLOBAIS
+   ========================================= */
+
+/* =========================================
+   DEFINIÇÃO DE TEMAS GLOBAIS (ATUALIZADO)
+   ========================================= */
+
+/* =========================================
+   DEFINIÇÃO DE TEMAS GLOBAIS (ATUALIZADO)
+   ========================================= */
+
+/* =========================================
+   DEFINIÇÃO DE TEMAS GLOBAIS (BEGE REAL)
+   ========================================= */
+
+:root {
+    /* Padrão: White Mode (Bege Quente e Contraste Forte) */
+    
+    /* 1. Cores de Fundo (Mais Bege, zero ofuscante) */
+    --bg-primary: #F0EADF;    /* Bege real, tom de areia/papel muito confortável */
+    --bg-secondary: #E6DFD3;  
+    --bg-pattern: #EAE5DE;    
+    
+    /* 2. Cores de Texto */
+    --text-main: #064E3B;     /* Verde Floresta Profundo para Títulos */
+    --text-description: #374151; 
+    --text-white: #ffffff;    
+    
+    /* 3. Cores da Marca */
+    --brand-main: #10B981;    /* Verde Esmeralda (Apenas botões e destaques) */
+    --brand-hover: #059669;   
+    
+    /* 4. Elementos de UI */
+    --ui-border: rgba(0, 0, 0, 0.1);
+    
+    /* 5. Configuração das Peças Flutuantes (CONTRASTE ALTO NO BEGE) */
+    --bg-floating-opacity: 0.20; /* Aumentei a força para aparecer bem */
+    --floating-color: #064E3B;   /* Peças ficam Verde Escuro para contrastar no bege */
+}
+
+[data-theme='dark'] {
+    /* Dark Mode Overrides */
+    
+    /* Cores de Fundo */
+    --bg-primary: #121212;    /* Preto Softer Premium */
+    --bg-secondary: #1A1A1A;  
+    --bg-pattern: #0F0F0F;    
+    
+    /* Cores de Texto */
+    --text-main: #ffffff;     
+    --text-description: #D1D5DB; 
+    --text-white: #ffffff;
+    
+    /* Cores da Marca */
+    --brand-main: #10B981;    
+    --brand-hover: #059669;
+    
+    /* Elementos de UI */
+    --ui-border: rgba(255, 255, 255, 0.1);
+    
+    /* Configuração das Peças Flutuantes (BRILHO NO ESCURO) */
+    --bg-floating-opacity: 0.12; 
+    --floating-color: #10B981;   /* Peças voltam a ser Verde Vibrante no preto */
+}
+/* 3. Aplicando no corpo do site com transição suave */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
