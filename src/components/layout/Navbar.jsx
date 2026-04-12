@@ -41,25 +41,51 @@ export default function Navbar() {
         }
     };
 
+    const isActive = (path) => location.pathname === path;
+
+    // Usuário está logado se tiver nome no localStorage
+    const isLogado = !!nome;
+
     return (
         <nav className="navbar">
             <div className="nav-container">
+
+                {/* Logo */}
                 <div className="nav-logo" onClick={() => goToSection('home')} style={{ cursor: 'pointer' }}>
                     Eco<span className="text-eco">Link</span>
                 </div>
 
+                {/* Links de navegação */}
                 <div className="nav-menu">
                     <div className="nav-links">
                         <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
                         <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
                         <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
-                        <Link to="/marketplace" className="nav-link-btn">Marketplace</Link>
-                        <Link to="/painel" className="nav-link-btn">Painel</Link>
+
+                        {/* Marketplace e Anunciar Lote só aparecem quando logado */}
+                        {isLogado && (
+                            <>
+                                <span className="nav-divider" />
+                                <Link
+                                    to="/marketplace"
+                                    className={`nav-link-btn ${isActive('/marketplace') ? 'nav-link-active' : ''}`}
+                                >
+                                    Marketplace
+                                </Link>
+                                <Link
+                                    to="/painel"
+                                    className={`nav-link-btn ${isActive('/painel') ? 'nav-link-active' : ''}`}
+                                >
+                                    Anunciar Lote
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
 
+                {/* Ações */}
                 <div className="nav-actions">
-                    {nome ? (
+                    {isLogado ? (
                         <Link to="/profile" className="nav-user-link">
                             Olá, <span>{nome}</span>
                         </Link>
@@ -69,11 +95,11 @@ export default function Navbar() {
                             <Link to="/register" className="nav-cta">Criar Conta</Link>
                         </div>
                     )}
-
                     <button onClick={toggleTheme} className="theme-toggle-nav" title="Alternar Tema">
                         {theme === 'light' ? '🌙' : '☀️'}
                     </button>
                 </div>
+
             </div>
         </nav>
     );

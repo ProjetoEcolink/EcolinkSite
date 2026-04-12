@@ -117,14 +117,7 @@ export default function Login() {
                         {loading ? 'Autenticando...' : 'Entrar na Plataforma'}
                     </button>
 
-                    {/* BOTÃO PARA ENTRAR SEM LOGIN */}
-                    <button 
-                        type="button" 
-                        className="btn-guest-access"
-                        onClick={() => navigate('/home')}
-                    >
-                        Entrar sem login (Visitante)
-                    </button>
+                
 
                     <p className="auth-footer-link" style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-description)', fontSize: '0.9rem' }}>
                         Ainda não tem uma conta? <Link to="/register" style={{ color: 'var(--green-eco)', fontWeight: 'bold', textDecoration: 'none' }}>Cadastre-se aqui.</Link>

@@ -1,114 +1,181 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../supabaseClient';
 import './Marketplace.css';
 
-// Banco de dados falso (Mock) para o MVP
-const mockLotes = [
-    {
-        id: 1,
-        titulo: "Lote 50 Monitores Dell 19\"",
-        empresa: "Tech Solutions S.A",
-        peso: "Aprox. 120kg",
-        categoria: "Monitores",
-        local: "Curitiba, PR",
-        descricao: "Monitores funcionando, trocados em atualização de parque tecnológico. Acompanha cabos de energia.",
-        contato: { nome: "Carlos", telefone: "(41) 99999-0000", email: "carlos@techsolutions.com" }
-    },
-    {
-        id: 2,
-        titulo: "Sucata de Servidores HP",
-        empresa: "DataCenter CloudBR",
-        peso: "Aprox. 450kg",
-        categoria: "Servidores / Placas",
-        local: "São Paulo, SP",
-        descricao: "Servidores antigos desativados. Sem HDDs (destruídos fisicamente por segurança). Alto teor de placas-mãe.",
-        contato: { nome: "Ana", telefone: "(11) 98888-1111", email: "ana@cloudbr.com.br" }
-    },
-    {
-        id: 3,
-        titulo: "Lote Misto: Notebooks e Nobreaks",
-        empresa: "Agência Criativa Ltda",
-        peso: "Aprox. 80kg",
-        categoria: "Misto",
-        local: "Florianópolis, SC",
-        descricao: "Cerca de 15 notebooks variados (telas quebradas ou baterias viciadas) e 5 nobreaks pesados.",
-        contato: { nome: "Marcos", telefone: "(48) 97777-2222", email: "marcos@agenciacriativa.com" }
-    }
-];
-
 export default function Marketplace() {
-    // Estado para controlar quais contatos foram revelados (guarda o ID do lote)
-    const [contatosRevelados, setContatosRevelados] = useState([]);
+    const [lotes, setLotes] = useState([]);
+    const [categoriaAtiva, setCategoriaAtiva] = useState('Todos');
+    const [contatosRevelados, setContatosRevelados] = useState({});
+    const [loading, setLoading] = useState(true);
+    const [deletando, setDeletando] = useState(null);
+
+    const categorias = ['Todos', 'Monitores', 'Servidores / Placas', 'Notebooks', 'Misto'];
+
+    useEffect(() => {
+        buscarLotes();
+    }, [categoriaAtiva]);
+
+    const buscarLotes = async () => {
+        setLoading(true);
+        try {
+            let query = supabase
+                .from('lotes')
+                .select(`
+                    *,
+                    empresas (
+                        nome,
+                        email,
+                        telefone
+                    )
+                `)
+                .eq('status', 'disponivel')
+                .order('created_at', { ascending: false });
+
+            if (categoriaAtiva !== 'Todos') {
+                query = query.eq('categoria', categoriaAtiva);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            setLotes(data || []);
+        } catch (error) {
+            console.error('Erro ao buscar lotes:', error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const revelarContato = (id) => {
-        if (!contatosRevelados.includes(id)) {
-            setContatosRevelados([...contatosRevelados, id]);
+        setContatosRevelados(prev => ({ ...prev, [id]: true }));
+    };
+
+    const deletarLote = async (id, foto_url) => {
+        const confirmar = window.confirm('Tem certeza que deseja remover este lote da vitrine?');
+        if (!confirmar) return;
+
+        setDeletando(id);
+        try {
+            // 1. Se tiver foto, remove do Storage também
+            if (foto_url) {
+                const nomeArquivo = foto_url.split('/').pop();
+                await supabase.storage
+                    .from('lotes-fotos')
+                    .remove([nomeArquivo]);
+            }
+
+            // 2. Remove o lote do banco
+            const { error } = await supabase
+                .from('lotes')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            // 3. Remove da lista local sem precisar recarregar
+            setLotes(prev => prev.filter(lote => lote.id !== id));
+        } catch (error) {
+            console.error('Erro ao deletar lote:', error.message);
+            alert('Erro ao remover lote: ' + error.message);
+        } finally {
+            setDeletando(null);
         }
     };
 
     return (
         <div className="marketplace-page">
-            <div className="marketplace-header">
+            <header className="marketplace-header">
                 <h2>Vitrine de <span className="text-highlight">Lotes Disponíveis</span></h2>
                 <p>Encontre os melhores ativos de TI e negocie direto com o gerador.</p>
 
-                {/* Filtros simples para o MVP */}
                 <div className="marketplace-filters">
-                    <button className="filter-btn active">Todos</button>
-                    <button className="filter-btn">Monitores</button>
-                    <button className="filter-btn">Servidores</button>
-                    <button className="filter-btn">Misto</button>
+                    {categorias.map(cat => (
+                        <button
+                            key={cat}
+                            className={`filter-btn ${categoriaAtiva === cat ? 'active' : ''}`}
+                            onClick={() => setCategoriaAtiva(cat)}
+                        >
+                            {cat}
+                        </button>
+                    ))}
                 </div>
-            </div>
+            </header>
 
-            <div className="marketplace-grid">
-                {mockLotes.map((lote) => (
-                    <div key={lote.id} className="lote-card">
+            {loading ? (
+                <div className="marketplace-status">
+                    <p>Carregando lotes...</p>
+                </div>
+            ) : lotes.length === 0 ? (
+                <div className="marketplace-status">
+                    <p>Nenhum lote disponível nessa categoria no momento.</p>
+                </div>
+            ) : (
+                <div className="marketplace-grid">
+                    {lotes.map((lote) => (
+                        <article key={lote.id} className="lote-card">
 
-                        {/* Imagem Placeholder */}
-                        <div className="lote-image-placeholder">
-                            <span className="image-icon">📷</span>
-                            <span className="categoria-badge">{lote.categoria}</span>
-                        </div>
+                            <div className="lote-image-placeholder">
+                                {lote.foto_url ? (
+                                    <img src={lote.foto_url} alt={lote.titulo} className="lote-foto" />
+                                ) : (
+                                    <span className="image-icon">📷</span>
+                                )}
+                                <span className="categoria-badge">{lote.categoria}</span>
 
-                        <div className="lote-info">
-                            <h3 className="lote-titulo">{lote.titulo}</h3>
-                            <p className="lote-empresa">🏢 {lote.empresa}</p>
-
-                            <div className="lote-meta">
-                                <span>⚖️ {lote.peso}</span>
-                                <span>📍 {lote.local}</span>
+                                {/* Botão de deletar no canto superior esquerdo da imagem */}
+                                <button
+                                    className="btn-deletar"
+                                    onClick={() => deletarLote(lote.id, lote.foto_url)}
+                                    disabled={deletando === lote.id}
+                                    title="Remover lote"
+                                >
+                                    {deletando === lote.id ? '...' : '🗑️'}
+                                </button>
                             </div>
 
-                            <p className="lote-descricao">{lote.descricao}</p>
-                        </div>
+                            <div className="lote-info">
+                                <h3 className="lote-titulo">{lote.titulo}</h3>
+                                <p className="lote-empresa">🏢 {lote.empresas?.nome || 'Empresa Parceira'}</p>
 
-                        <div className="lote-action">
-                            {contatosRevelados.includes(lote.id) ? (
-                                <div className="contato-revelado">
-                                    <p className="contato-nome">👤 {lote.contato.nome}</p>
-                                    <p className="contato-dado">📞 {lote.contato.telefone}</p>
-                                    <p className="contato-dado">✉️ {lote.contato.email}</p>
-                                    <a
-                                        href={`https://wa.me/55${lote.contato.telefone.replace(/\D/g, '')}?text=Olá! Vi seu anúncio no EcoLink: ${lote.titulo}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="btn-whatsapp"
-                                    >
-                                        Chamar no WhatsApp
-                                    </a>
+                                <div className="lote-meta">
+                                    <span>⚖️ {lote.peso_kg ? `${lote.peso_kg}kg` : 'Peso N/A'}</span>
+                                    <span>📍 {lote.cidade}, {lote.estado}</span>
                                 </div>
-                            ) : (
-                                <button
-                                    className="btn-revelar"
-                                    onClick={() => revelarContato(lote.id)}
-                                >
-                                    Ver Contato do Vendedor
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
+
+                                <p className="lote-descricao">{lote.descricao}</p>
+                            </div>
+
+                            <div className="lote-action">
+                                {contatosRevelados[lote.id] ? (
+                                    <div className="contato-revelado">
+                                        <p className="contato-nome">👤 {lote.empresas?.nome}</p>
+                                        <p className="contato-dado">📞 {lote.empresas?.telefone || 'Não informado'}</p>
+                                        <p className="contato-dado">✉️ {lote.empresas?.email || 'Não informado'}</p>
+
+                                        {lote.empresas?.telefone && (
+                                            <a
+                                                href={`https://wa.me/55${lote.empresas.telefone.replace(/\D/g, '')}?text=Olá! Vi seu anúncio no EcoLink: ${lote.titulo}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="btn-whatsapp"
+                                            >
+                                                Chamar no WhatsApp
+                                            </a>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <button
+                                        className="btn-revelar"
+                                        onClick={() => revelarContato(lote.id)}
+                                    >
+                                        Ver Contato do Vendedor
+                                    </button>
+                                )}
+                            </div>
+
+                        </article>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

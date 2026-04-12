@@ -1,68 +1,79 @@
 /* =========================================
-   PÁGINA DO PAINEL DO VENDEDOR
+   PAINEL — EcoLink
    ========================================= */
+
 .painel-page {
     min-height: 100vh;
-    padding: 8rem 1.5rem 4rem 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
     background-color: var(--bg-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 4rem 0 6rem;
+    transition: background-color 0.3s ease;
 }
 
+/* ---- Container ---- */
 .painel-container {
-    width: 100%;
-    max-width: 700px;
+    max-width: 780px;
+    width: 90%;
+    margin: 0 auto;
     background-color: var(--bg-secondary);
     border: 1px solid var(--ui-border);
-    border-radius: 20px;
-    padding: 3rem 2.5rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
+/* ---- Header ---- */
 .painel-header {
-    text-align: center;
-    margin-bottom: 2.5rem;
+    padding: 3rem;
+    border-bottom: 1px solid var(--ui-border);
+    position: relative;
+    overflow: hidden;
+}
+
+.painel-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 260px;
+    height: 260px;
+    background-color: var(--brand-main);
+    opacity: 0.08;
+    filter: blur(80px);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .painel-header h2 {
-    font-size: 2rem;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
     font-weight: 800;
+    letter-spacing: -0.03em;
     color: var(--text-main);
-    margin-bottom: 0.5rem;
+    margin: 0 0 0.75rem;
+    line-height: 1.2;
+    position: relative;
+}
+
+.text-highlight {
+    color: var(--brand-main);
 }
 
 .painel-header p {
     color: var(--text-description);
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    margin: 0;
+    position: relative;
+    max-width: 520px;
 }
 
-/* --- FORMULÁRIO --- */
+/* ---- Form ---- */
 .painel-form {
+    padding: 3rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-}
-
-.form-row {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.flex-1 {
-    flex: 1;
-}
-
-.flex-2 {
-    flex: 2;
-}
-
-@media (max-width: 600px) {
-    .form-row {
-        flex-direction: column;
-        gap: 1.5rem;
-    }
 }
 
 .form-group {
@@ -71,22 +82,38 @@
     gap: 0.5rem;
 }
 
+.form-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.flex-1 { flex: 1; }
+.flex-2 { flex: 2; }
+
 .form-label {
-    color: var(--text-main);
     font-size: 0.9rem;
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: 0.01em;
 }
 
 .form-input {
-    width: 100%;
-    padding: 1rem 1.25rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 1rem;
+    color: var(--text-main);
     background-color: var(--bg-primary);
     border: 1px solid var(--ui-border);
-    border-radius: 8px;
-    color: var(--text-main);
-    font-size: 1rem;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
     outline: none;
+    width: 100%;
+    box-sizing: border-box;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-input::placeholder {
+    color: var(--text-description);
+    opacity: 0.6;
 }
 
 .form-input:focus {
@@ -97,72 +124,102 @@
 .form-select {
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1em;
+    background-position: right 16px center;
+    padding-right: 40px;
 }
 
 .form-textarea {
     resize: vertical;
     min-height: 120px;
+    line-height: 1.6;
 }
 
-/* --- ÁREA DE UPLOAD (DROPZONE) --- */
+/* ---- Dropzone ---- */
 .image-dropzone {
-    width: 100%;
-    padding: 2.5rem 1rem;
-    border: 2px dashed var(--ui-border);
+    border: 1px dashed var(--ui-border);
     border-radius: 12px;
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: var(--bg-primary);
+    padding: 2.5rem 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
+    gap: 0.5rem;
     cursor: pointer;
     transition: all 0.3s ease;
+    min-height: 180px;
+    text-align: center;
 }
 
 .image-dropzone:hover {
     border-color: var(--brand-main);
-    background-color: rgba(from var(--brand-main) r g b / 0.05);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
 .dropzone-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-    opacity: 0.7;
+    font-size: 2rem;
+    line-height: 1;
 }
 
 .image-dropzone p {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
     color: var(--text-main);
-    font-weight: 600;
-    margin: 0 0 0.25rem 0;
 }
 
 .dropzone-hint {
+    font-size: 0.85rem;
     color: var(--text-description);
-    font-size: 0.8rem;
+    opacity: 0.6;
 }
 
-/* --- BOTÃO SUBMIT --- */
+/* ---- Botão ---- */
 .btn-submit {
-    margin-top: 1rem;
-    width: 100%;
-    padding: 1.15rem;
-    background-color: var(--brand-main);
-    color: var(--text-white);
-    font-weight: 700;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 1rem;
-    border-radius: 8px;
+    font-weight: 700;
+    color: var(--text-white);
+    background-color: var(--brand-main);
     border: none;
+    border-radius: 8px;
+    padding: 1rem 2rem;
     cursor: pointer;
     transition: all 0.3s ease;
+    align-self: flex-end;
+    min-width: 180px;
+    white-space: nowrap;
 }
 
-.btn-submit:hover {
+.btn-submit:hover:not(:disabled) {
     background-color: var(--brand-hover);
     transform: translateY(-2px);
     box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ---- Responsivo ---- */
+@media (max-width: 1024px) {
+    .painel-header {
+        padding: 2rem;
+    }
+
+    .painel-form {
+        padding: 2rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+
+    .btn-submit {
+        align-self: stretch;
+        width: 100%;
+    }
 }

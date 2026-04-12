@@ -1,33 +1,100 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../supabaseClient'; 
 import './Painel.css';
 
 export default function Painel() {
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
-    // Estado para guardar os dados do novo anúncio
+    // Estado inicial do lote
     const [lote, setLote] = useState({
         titulo: '',
-        categoria: 'Monitores',
+        categoria: 'Notebooks',
         peso: '',
         local: '',
         descricao: ''
     });
 
+    const [file, setFile] = useState(null);
+    const [preview, setPreview] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    // ID que você recuperou do banco para vincular o anúncio
+    const EMPRESA_ID_VALIDO = 'cae98f44-9b56-4514-9937-e6edaef6e86c';
+
     const handleInputChange = (e) => {
         setLote({ ...lote, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleFileChange = (e) => {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setPreview(URL.createObjectURL(selectedFile));
+        }
+    };
+
+    const triggerFileSelect = () => {
+        fileInputRef.current.click();
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
 
-        // Num cenário real, aqui enviaríamos o 'lote' para a nossa API em Python
-        console.log('Lote registado para IA avaliar e anunciar:', lote);
+        try {
+            let foto_url = null;
 
-        alert('Lote registado com sucesso! A nossa equipa (ou IA) vai avaliar e o anúncio irá para a vitrine em breve.');
+            // 1. Upload da Imagem (Opcional, mas funcional)
+            if (file) {
+                const fileName = `${Date.now()}-${file.name}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('lotes-fotos')
+                    .upload(fileName, file);
 
-        // Redireciona o vendedor de volta para ver a vitrine
-        navigate('/marketplace');
+                if (uploadError) throw uploadError;
+
+                const { data: urlData } = supabase.storage
+                    .from('lotes-fotos')
+                    .getPublicUrl(fileName);
+                
+                foto_url = urlData.publicUrl;
+            }
+
+            // 2. Tratamento da Localização (Divide "Curitiba, PR" em Cidade e Estado)
+            const localPartes = lote.local.split(',');
+            const cidadeFormatada = localPartes[0] ? localPartes[0].trim() : lote.local;
+            const estadoFormatado = localPartes[1] ? localPartes[1].trim().toUpperCase() : '';
+
+            // 3. Inserção no Banco de Dados
+            const { error: insertError } = await supabase
+                .from('lotes')
+                .insert([
+                    {
+                        titulo: lote.titulo,
+                        categoria: lote.categoria,
+                        peso_kg: parseFloat(lote.peso.replace(',', '.')), // Garante que vire número
+                        cidade: cidadeFormatada,
+                        estado: estadoFormatado,
+                        descricao: lote.descricao,
+                        foto_url: foto_url,
+                        status: 'disponivel', // Crucial para aparecer no Marketplace
+                        empresa_id: EMPRESA_ID_VALIDO
+                    }
+                ]);
+
+            if (insertError) throw insertError;
+
+            alert('Sucesso! O Laptop da Xuxa (ou seu lote) já está na vitrine.');
+            navigate('/marketplace');
+
+        } catch (error) {
+            console.error('Erro detalhado:', error);
+            alert('Erro ao publicar: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -36,18 +103,32 @@ export default function Painel() {
 
                 <div className="painel-header">
                     <h2>Anunciar Novo <span className="text-highlight">Lote</span></h2>
-                    <p>Preencha os dados abaixo. A nossa IA utilizará estas informações para sugerir o melhor valor de mercado.</p>
+                    <p>Preencha os dados abaixo para que nossa IA e compradores avaliem seu material.</p>
                 </div>
 
                 <form className="painel-form" onSubmit={handleSubmit}>
 
-                    {/* Área de Upload de Foto (Simulada) */}
                     <div className="form-group">
                         <label className="form-label">Foto dos Equipamentos</label>
-                        <div className="image-dropzone">
-                            <span className="dropzone-icon">📸</span>
-                            <p>Clique ou arraste uma foto aqui</p>
-                            <span className="dropzone-hint">Formatos suportados: JPG, PNG</span>
+                        <input 
+                            type="file" 
+                            accept="image/*" 
+                            ref={fileInputRef} 
+                            onChange={handleFileChange} 
+                            style={{ display: 'none' }} 
+                        />
+                        <div 
+                            className="image-dropzone" 
+                            onClick={triggerFileSelect}
+                            style={preview ? { backgroundImage: `url(${preview})`, borderStyle: 'solid' } : {}}
+                        >
+                            {!preview && (
+                                <>
+                                    <span className="dropzone-icon">📸</span>
+                                    <p>Clique para enviar a foto</p>
+                                    <span className="dropzone-hint">PNG ou JPG</span>
+                                </>
+                            )}
                         </div>
                     </div>
 
@@ -58,7 +139,7 @@ export default function Painel() {
                                 type="text"
                                 name="titulo"
                                 className="form-input"
-                                placeholder="Ex: 20 Monitores Dell com defeito"
+                                placeholder="Ex: Laptop da Xuxa com defeito"
                                 value={lote.titulo}
                                 onChange={handleInputChange}
                                 required
@@ -73,9 +154,9 @@ export default function Painel() {
                                 value={lote.categoria}
                                 onChange={handleInputChange}
                             >
+                                <option value="Notebooks">Notebooks</option>
                                 <option value="Monitores">Monitores</option>
                                 <option value="Servidores / Placas">Servidores / Placas</option>
-                                <option value="Notebooks">Notebooks</option>
                                 <option value="Misto">Lote Misto</option>
                             </select>
                         </div>
@@ -83,12 +164,12 @@ export default function Painel() {
 
                     <div className="form-row">
                         <div className="form-group flex-1">
-                            <label className="form-label">Peso Estimado</label>
+                            <label className="form-label">Peso Estimado (kg)</label>
                             <input
                                 type="text"
                                 name="peso"
                                 className="form-input"
-                                placeholder="Ex: 50kg"
+                                placeholder="Ex: 1.0"
                                 value={lote.peso}
                                 onChange={handleInputChange}
                                 required
@@ -101,7 +182,7 @@ export default function Painel() {
                                 type="text"
                                 name="local"
                                 className="form-input"
-                                placeholder="Ex: Curitiba, PR"
+                                placeholder="Curitiba, PR"
                                 value={lote.local}
                                 onChange={handleInputChange}
                                 required
@@ -114,7 +195,7 @@ export default function Painel() {
                         <textarea
                             name="descricao"
                             className="form-input form-textarea"
-                            placeholder="Descreva o estado dos equipamentos, se possuem cabos, se há peças em falta, etc."
+                            placeholder="Descreva o estado do item..."
                             rows="4"
                             value={lote.descricao}
                             onChange={handleInputChange}
@@ -122,8 +203,8 @@ export default function Painel() {
                         ></textarea>
                     </div>
 
-                    <button type="submit" className="btn-submit">
-                        Publicar Anúncio
+                    <button type="submit" className="btn-submit" disabled={loading}>
+                        {loading ? 'Publicando...' : 'Publicar no Marketplace'}
                     </button>
 
                 </form>

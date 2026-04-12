@@ -69,7 +69,7 @@ export default function Profile() {
         try {
             await supabase.auth.signOut();
             localStorage.removeItem('usuario');
-            navigate('/login'); 
+            navigate('/home'); 
             window.location.reload(); 
         } catch (error) {
             console.error("Erro ao sair:", error.message);
