@@ -8,6 +8,7 @@ export default function Profile() {
     const [isEditing, setIsEditing] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [showSaveModal, setShowSaveModal] = useState(false); // ← novo
     
     const [formData, setFormData] = useState({
         nome: '',
@@ -26,9 +27,7 @@ export default function Profile() {
             if (session) {
                 const currentUser = session.user;
                 setUser(currentUser);
-                
                 const meta = currentUser.user_metadata;
-                
                 setFormData({
                     nome: meta?.nome || '',
                     email: currentUser.email || '',
@@ -37,9 +36,6 @@ export default function Profile() {
                     perfil: meta?.perfil || '' 
                 });
             } else {
-                // REMOVIDO: navigate('/login')
-                // Agora, se não houver sessão, apenas não mostramos o perfil,
-                // mas não forçamos a saída do usuário do site.
                 setUser(false); 
             }
         };
@@ -52,19 +48,19 @@ export default function Profile() {
                 data: { 
                     nome: formData.nome,
                     telefone: formData.telefone,
-                    documento: formData.documento 
+                    // documento NÃO é atualizado — campo somente leitura
                 }
             });
 
             if (error) throw error;
             setIsEditing(false);
+            setShowSaveModal(false);
             alert("Suas informações foram atualizadas com sucesso!");
         } catch (error) {
             alert("Erro ao salvar dados: " + error.message);
         }
     };
 
-    // Logout: SÓ AQUI ele redireciona para o login
     const handleLogout = async () => {
         try {
             await supabase.auth.signOut();
@@ -80,7 +76,6 @@ export default function Profile() {
         try {
             const { error } = await supabase.rpc('delete_self_user');
             if (error) throw error;
-            
             await supabase.auth.signOut();
             localStorage.removeItem('usuario');
             navigate('/login');
@@ -90,7 +85,6 @@ export default function Profile() {
         }
     };
 
-    // Se o usuário tentar acessar o perfil sem estar logado
     if (user === false) {
         return (
             <div className="profile-page">
@@ -179,20 +173,21 @@ export default function Profile() {
                             />
                         </div>
 
+                        {/* CPF/CNPJ — sempre somente leitura */}
                         <div className="form-item">
-                            <label>{formData.perfil === 'Empresa' ? 'CNPJ' : 'CPF'}</label>
+                            <label>{formData.perfil === 'Empresa' ? 'CNPJ (Inalterável)' : 'CPF (Inalterável)'}</label>
                             <input 
                                 type="text" 
-                                disabled={!isEditing} 
+                                disabled={true}
                                 value={formData.documento}
-                                onChange={(e) => setFormData({...formData, documento: e.target.value})}
-                                className={isEditing ? "input-field editing" : "input-field"} 
+                                className="input-field readonly"
                             />
                         </div>
                     </div>
 
+                    {/* Botão que abre modal de confirmação */}
                     {isEditing && (
-                        <button className="btn-save-full" onClick={handleSave}>
+                        <button className="btn-save-full" onClick={() => setShowSaveModal(true)}>
                             Confirmar Alterações
                         </button>
                     )}
@@ -210,11 +205,34 @@ export default function Profile() {
                 </div>
             </div>
 
+            {/* Modal: Deseja Salvar? */}
+            {showSaveModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3 className="text-white">Deseja salvar as alterações?</h3>
+                        <p className="text-dim">As informações do seu perfil serão atualizadas.</p>
+                        <div className="modal-buttons">
+                            <button className="btn-cancel" onClick={() => setShowSaveModal(false)}>
+                                Cancelar
+                            </button>
+                            <button 
+                                className="btn-confirm-del" 
+                                style={{background: 'var(--green-eco)'}} 
+                                onClick={handleSave}
+                            >
+                                Salvar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: Logout */}
             {showLogoutModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
                         <h3 className="text-white">Deseja sair agora?</h3>
-                        <p className="text-dim">Você será levado de volta à página de login.</p>
+                        <p className="text-dim">Você será levado de volta à página inicial.</p>
                         <div className="modal-buttons">
                             <button className="btn-cancel" onClick={() => setShowLogoutModal(false)}>
                                 Voltar
@@ -231,6 +249,7 @@ export default function Profile() {
                 </div>
             )}
 
+            {/* Modal: Excluir Conta */}
             {showDeleteModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">

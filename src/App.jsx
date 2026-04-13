@@ -39,7 +39,7 @@ const ProtectedRoute = ({ session, children }) => {
 
 const LayoutHandler = ({ children }) => {
     const location = useLocation();
-    const hideLayout = ['/', '/login', '/register'].includes(location.pathname);
+    const hideLayout = ['/login', '/register'].includes(location.pathname); // ← removido '/'
 
     return (
         <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -53,15 +53,13 @@ const LayoutHandler = ({ children }) => {
 };
 
 function App() {
-    const [session, setSession] = useState(null); // null = carregando, false = sem sessão
+    const [session, setSession] = useState(null);
 
     useEffect(() => {
-        // Pega sessão atual
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session || false);
         });
 
-        // Escuta mudanças de sessão (login/logout)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session || false);
         });
@@ -73,19 +71,17 @@ function App() {
         <BrowserRouter>
             <LayoutHandler>
                 <Routes>
-                    {/* Raiz — se logado vai pra /home, se não vai pro /login */}
-                    <Route path="/" element={
-                        session === null ? null :
-                        session ? <Navigate to="/home" replace /> :
-                        <Navigate to="/login" replace />
-                    } />
+                    {/* Raiz — Landing Page pública para todos */}
+                    <Route path="/" element={<LandingPage />} />
+
+                    {/* /home também mostra a Landing Page */}
+                    <Route path="/home" element={<LandingPage />} />
 
                     {/* Auth — sem navbar */}
                     <Route path="/login"    element={<Login />} />
                     <Route path="/register" element={<Register />} />
 
                     {/* App — com navbar, público */}
-                    <Route path="/home"        element={<LandingPage />} />
                     <Route path="/marketplace" element={<Marketplace />} />
 
                     {/* App — com navbar, protegido */}

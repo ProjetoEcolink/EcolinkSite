@@ -39,7 +39,7 @@ export default function HeroSection() {
 
                 <div className="hero-buttons">
                     <button className="btn-primary">
-                        Entrar na Lista de Espera
+                         Quero Fazer Parte
                     </button>
                     <button className="btn-secondary">
                         Entenda a Plataforma ↓

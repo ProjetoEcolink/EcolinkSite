@@ -4,10 +4,9 @@ import { supabase } from '../../supabaseClient';
 import './Register.css';
 
 export default function Register() {
-    const [perfil, setPerfil] = useState('reciclador'); 
-    const [showModal, setShowModal] = useState(false);
-    const [codigoInserido, setCodigoInserido] = useState('');
+    const [perfil, setPerfil] = useState('reciclador');
     const [loading, setLoading] = useState(false);
+    const [erro, setErro] = useState('');
     const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
     
     const [formData, setFormData] = useState({ 
@@ -26,28 +25,57 @@ export default function Register() {
         const cleanValue = value.replace(/\D/g, '');
         if (name === 'documento') {
             if (perfil === 'reciclador') {
-                return cleanValue.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').substring(0, 14);
+                return cleanValue
+                    .replace(/(\d{3})(\d)/, '$1.$2')
+                    .replace(/(\d{3})(\d)/, '$1.$2')
+                    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+                    .substring(0, 14);
             } else {
-                return cleanValue.replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2').substring(0, 18);
+                return cleanValue
+                    .replace(/^(\d{2})(\d)/, '$1.$2')
+                    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+                    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+                    .replace(/(\d{4})(\d)/, '$1-$2')
+                    .substring(0, 18);
             }
         }
         if (name === 'telefone') {
-            return cleanValue.replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2').substring(0, 15);
+            return cleanValue
+                .replace(/^(\d{2})(\d)/g, '($1) $2')
+                .replace(/(\d{5})(\d)/, '$1-$2')
+                .substring(0, 15);
         }
         return value;
     };
 
     const handleInputChange = (e) => {
         let { name, value } = e.target;
+        setErro('');
         if (name === 'documento' || name === 'telefone') value = applyMask(value, name);
         setFormData({ ...formData, [name]: value });
     };
 
+    const handleSelectPerfil = (tipo) => {
+        setPerfil(tipo);
+        setFormData(prev => ({ ...prev, documento: '' }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (formData.senha !== formData.confirmarSenha) return alert('Senhas não coincidem!');
-        
+        setErro('');
+
+        if (formData.senha !== formData.confirmarSenha) {
+            setErro('As senhas não coincidem.');
+            return;
+        }
+
+        if (formData.senha.length < 6) {
+            setErro('A senha deve ter pelo menos 6 caracteres.');
+            return;
+        }
+
         setLoading(true);
+
         const { error } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.senha,
@@ -60,24 +88,13 @@ export default function Register() {
                 }
             }
         });
-        setLoading(false);
-        if (error) alert(error.message);
-        else setShowModal(true);
-    };
 
-    const handleVerificarCodigo = async () => {
-        setLoading(true);
-        const { error } = await supabase.auth.verifyOtp({
-            email: formData.email,
-            token: codigoInserido,
-            type: 'signup'
-        });
+        setLoading(false);
 
         if (error) {
-            alert('Código inválido ou expirado.');
-            setLoading(false);
+            setErro(error.message);
         } else {
-            alert('Cadastro confirmado!');
+            alert('Cadastro realizado com sucesso!');
             navigate('/login');
         }
     };
@@ -90,59 +107,139 @@ export default function Register() {
 
             <div className="auth-container">
                 <div className="auth-brand">Eco<span className="text-eco">Link</span></div>
-                
+
                 <div className="auth-header">
                     <h2>Crie sua conta</h2>
+                    <p>Selecione seu perfil e preencha os dados.</p>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="perfil-selection">
-                        <div className={`perfil-card ${perfil === 'gerador' ? 'selected' : ''}`} 
-                             onClick={() => {setPerfil('gerador'); setFormData({...formData, documento: ''})}}>
-                            <h4> Gerador</h4>
-                            <p>Empresa / Doador</p>
-                        </div>
-                        <div className={`perfil-card ${perfil === 'reciclador' ? 'selected' : ''}`} 
-                             onClick={() => {setPerfil('reciclador'); setFormData({...formData, documento: ''})}}>
-                            <h4>Reciclador</h4>
-                            <p>Coletor / Parceiro</p>
-                        </div>
-                    </div>
+                {/* Seletor de perfil inline */}
+                <div className="perfil-toggle">
+                    <button
+                        type="button"
+                        className={`perfil-toggle-btn ${perfil === 'reciclador' ? 'active' : ''}`}
+                        onClick={() => handleSelectPerfil('reciclador')}
+                    >
+                        ♻️ Reciclador
+                    </button>
+                    <button
+                        type="button"
+                        className={`perfil-toggle-btn ${perfil === 'gerador' ? 'active' : ''}`}
+                        onClick={() => handleSelectPerfil('gerador')}
+                    >
+                        🏢 Gerador
+                    </button>
+                </div>
 
+                <p className="perfil-desc">
+                    {perfil === 'reciclador'
+                        ? 'Coletor ou parceiro que compra e processa resíduos eletrônicos.'
+                        : 'Empresa que descarta equipamentos com segurança e compliance ESG.'}
+                </p>
+
+                <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label className="form-label">Nome Completo / Razão Social</label>
-                        <input type="text" name="nome" className="form-input" placeholder="Seu nome ou empresa" onChange={handleInputChange} required />
+                        <label className="form-label">
+                            {perfil === 'gerador' ? 'Razão Social' : 'Nome Completo'}
+                        </label>
+                        <input
+                            type="text"
+                            name="nome"
+                            className="form-input"
+                            placeholder={perfil === 'gerador' ? 'Nome da empresa' : 'Seu nome completo'}
+                            value={formData.nome}
+                            onChange={handleInputChange}
+                            required
+                        />
                     </div>
 
                     <div className="auth-row-inputs">
                         <div className="form-group">
-                            <label className="form-label">{perfil === 'reciclador' ? 'CPF' : 'CNPJ'}</label>
-                            <input type="text" name="documento" className="form-input" value={formData.documento} placeholder={perfil === 'reciclador' ? "000.000.000-00" : "00.000.000/0000-00"} onChange={handleInputChange} required />
+                            <label className="form-label">
+                                {perfil === 'gerador' ? 'CNPJ' : 'CPF'}
+                            </label>
+                            <input
+                                type="text"
+                                name="documento"
+                                className="form-input"
+                                value={formData.documento}
+                                placeholder={perfil === 'gerador' ? '00.000.000/0000-00' : '000.000.000-00'}
+                                onChange={handleInputChange}
+                                required
+                            />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Telefone</label>
-                            <input type="text" name="telefone" className="form-input" value={formData.telefone} placeholder="(00) 00000-0000" onChange={handleInputChange} required />
+                            <input
+                                type="text"
+                                name="telefone"
+                                className="form-input"
+                                value={formData.telefone}
+                                placeholder="(00) 00000-0000"
+                                onChange={handleInputChange}
+                                required
+                            />
                         </div>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">E-mail Corporativo</label>
-                        <input type="email" name="email" className="form-input" placeholder="seu@email.com" onChange={handleInputChange} required />
+                        <label className="form-label">
+                            {perfil === 'gerador' ? 'E-mail Corporativo' : 'E-mail'}
+                        </label>
+                        <input
+                            type="email"
+                            name="email"
+                            className="form-input"
+                            placeholder={perfil === 'gerador' ? 'contato@empresa.com.br' : 'seu@email.com'}
+                            value={formData.email}
+                            onChange={handleInputChange}
+                            required
+                        />
                     </div>
 
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">Senha</label>
-                            <input type="password" name="senha" className="form-input" placeholder="••••••••" onChange={handleInputChange} required />
+                            <input
+                                type="password"
+                                name="senha"
+                                className="form-input"
+                                placeholder="••••••••"
+                                value={formData.senha}
+                                onChange={handleInputChange}
+                                required
+                            />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Confirmar</label>
-                            <input type="password" name="confirmarSenha" className="form-input" placeholder="••••••••" onChange={handleInputChange} required />
+                            <input
+                                type="password"
+                                name="confirmarSenha"
+                                className="form-input"
+                                placeholder="••••••••"
+                                value={formData.confirmarSenha}
+                                onChange={handleInputChange}
+                                required
+                            />
                         </div>
                     </div>
 
+                    {erro && (
+                        <div style={{
+                            background: 'rgba(255, 80, 80, 0.1)',
+                            border: '1px solid rgba(255, 80, 80, 0.4)',
+                            borderRadius: '10px',
+                            padding: '10px 14px',
+                            color: '#ff6b6b',
+                            fontSize: '0.85rem',
+                            marginBottom: '10px'
+                        }}>
+                            ⚠️ {erro}
+                        </div>
+                    )}
+
                     <button type="submit" className="btn-submit" disabled={loading}>
-                        {loading ? 'Processando...' : 'Cadastrar agora'}
+                        {loading ? 'Criando conta...' : 'Cadastrar agora'}
                     </button>
 
                     <p className="auth-footer-link">
@@ -150,30 +247,6 @@ export default function Register() {
                     </p>
                 </form>
             </div>
-
-            {showModal && (
-                <div className="auth-modal-overlay">
-                    <div className="auth-modal">
-                        <h3>Verifique seu E-mail</h3>
-                        <p className="modal-desc">Código enviado para: <strong>{formData.email}</strong></p>
-                        
-                        <input 
-                            type="text" 
-                            className="otp-input" 
-                            maxLength="8" 
-                            value={codigoInserido} 
-                            onChange={(e) => setCodigoInserido(e.target.value)} 
-                            placeholder="00000000"
-                            autoFocus 
-                        />
-                        
-                        <div className="modal-actions-stack">
-                            <button className="btn-confirm" onClick={handleVerificarCodigo}>Verificar Código</button>
-                            <button className="btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
