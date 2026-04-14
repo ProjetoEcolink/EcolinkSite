@@ -11,7 +11,7 @@
     font-family: 'Inter', sans-serif;
 }
 
-/* Botão Flutuante de Troca de Tema (Sol/Lua) */
+/* Botao Flutuante de Troca de Tema */
 .auth-theme-toggle {
     position: absolute;
     top: 25px;
@@ -21,20 +21,25 @@
     color: var(--text-main);
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: 12px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.3rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
     z-index: 100;
 }
 
 .auth-theme-toggle:hover {
-    transform: rotate(15deg) scale(1.1);
-    border-color: var(--green-eco);
+    transform: translateY(-1px);
+    border-color: var(--text-description);
+    background-color: var(--bg-primary);
+}
+
+.theme-toggle-icon {
+    width: 18px;
+    height: 18px;
 }
 
 /* Card Central de Login */

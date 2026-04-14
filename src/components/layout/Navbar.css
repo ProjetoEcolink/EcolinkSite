@@ -18,16 +18,16 @@
 
 .nav-container {
     width: 100%;
-    max-width: 1200px;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    max-width: 1320px;
+    display: flex;
     align-items: center;
     padding: 0 24px;
+    gap: 20px;
 }
 
 /* Esquerda */
 .nav-logo {
-    justify-self: start;
+    flex-shrink: 0;
     font-size: 1.6rem;
     font-weight: 800;
     color: var(--text-main);
@@ -38,6 +38,12 @@
 .text-eco { color: var(--brand-main); }
 
 /* Centro */
+.nav-menu {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+}
+
 .nav-links {
     display: flex;
     align-items: center;
@@ -98,10 +104,11 @@
 
 /* Direita */
 .nav-actions {
-    justify-self: end;
+    margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    flex-shrink: 0;
 }
 
 .nav-auth-group {
@@ -163,14 +170,40 @@
 }
 
 .theme-toggle-nav {
-    background: none;
-    border: none;
-    font-size: 1.4rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--ui-border);
+    background-color: var(--bg-secondary);
+    color: var(--text-main);
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     padding: 0;
     flex-shrink: 0;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.theme-toggle-nav:hover {
+    transform: translateY(-1px);
+    border-color: var(--text-description);
+    background-color: var(--bg-primary);
+}
+
+.theme-toggle-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.nav-utility-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 10px;
+    margin-left: 4px;
+    border-left: 1px solid var(--ui-border);
 }
 
 .nav-cta {
@@ -195,5 +228,12 @@
 /* Mobile */
 @media (max-width: 850px) {
     .nav-links { display: none; }
-    .nav-container { grid-template-columns: 1fr 1fr; }
+    .nav-menu {
+        flex: 0 0 auto;
+    }
+    .nav-utility-group {
+        padding-left: 0;
+        margin-left: 0;
+        border-left: none;
+    }
 }

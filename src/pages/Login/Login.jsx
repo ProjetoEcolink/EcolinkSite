@@ -1,19 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../supabaseClient'; 
+import { supabase } from '../../supabaseClient';
 import './Login.css';
+
+function ThemeIcon({ theme }) {
+    if (theme === 'light') {
+        return (
+            <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                    d="M20.354 15.354A9 9 0 1 1 8.646 3.646a7 7 0 0 0 11.708 11.708Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        );
+    }
+
+    return (
+        <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+            <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+            />
+        </svg>
+    );
+}
 
 export default function Login() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({ email: '', senha: '' });
     const [loading, setLoading] = useState(false);
-    
-    // Inicializa o tema lendo o que o index.html definiu
+
     const [theme, setTheme] = useState(() => {
         return document.documentElement.getAttribute('data-theme') || 'dark';
     });
 
-    // Monitora mudanças no tema para atualizar o ícone (sol/lua)
     useEffect(() => {
         const observer = new MutationObserver(() => {
             setTheme(document.documentElement.getAttribute('data-theme') || 'dark');
@@ -22,11 +48,10 @@ export default function Login() {
         return () => observer.disconnect();
     }, []);
 
-    // Função de Troca de Tema com Persistência
     const toggleTheme = () => {
         const next = theme === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next); // Salva para não mudar ao recarregar
+        localStorage.setItem('theme', next);
         setTheme(next);
     };
 
@@ -58,16 +83,14 @@ export default function Login() {
 
             localStorage.setItem('usuario', JSON.stringify(usuarioParaSalvar));
             setLoading(false);
-            // Após logar com sucesso, vai para a Landing Page
-            navigate('/home'); 
+            navigate('/home');
         }
     };
 
     return (
         <div className="auth-page">
-            {/* Botão flutuante de tema */}
-            <button className="auth-theme-toggle" onClick={toggleTheme} aria-label="Mudar tema">
-                {theme === 'light' ? '🌙' : '☀️'}
+            <button className="auth-theme-toggle" onClick={toggleTheme} aria-label="Mudar tema" type="button">
+                <ThemeIcon theme={theme} />
             </button>
 
             <div className="auth-container">
@@ -116,8 +139,6 @@ export default function Login() {
                     <button type="submit" className="btn-submit" disabled={loading}>
                         {loading ? 'Autenticando...' : 'Entrar na Plataforma'}
                     </button>
-
-                
 
                     <p className="auth-footer-link" style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-description)', fontSize: '0.9rem' }}>
                         Ainda não tem uma conta? <Link to="/register" style={{ color: 'var(--green-eco)', fontWeight: 'bold', textDecoration: 'none' }}>Cadastre-se aqui.</Link>

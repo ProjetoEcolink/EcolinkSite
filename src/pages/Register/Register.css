@@ -31,14 +31,14 @@
     font-family: 'Inter', sans-serif;
 }
 
-/* --- Botão de Tema --- */
+/* --- Botao de Tema --- */
 .auth-theme-toggle {
     position: fixed;
     top: 25px;
     right: 25px;
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: 12px;
     border: 1px solid var(--ui-border);
     background-color: var(--bg-secondary);
     color: var(--text-main);
@@ -46,10 +46,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: all var(--transition-speed) ease;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transition: transform var(--transition-speed) ease, border-color var(--transition-speed) ease, background-color var(--transition-speed) ease;
     z-index: 100;
+}
+
+.auth-theme-toggle:hover {
+    transform: translateY(-1px);
+    border-color: var(--text-description);
+    background-color: var(--bg-primary);
+}
+
+.theme-toggle-icon {
+    width: 18px;
+    height: 18px;
 }
 
 /* --- Container Principal --- */
