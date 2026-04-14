@@ -3,6 +3,70 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import './Register.css';
 
+const onlyDigits = (value) => value.replace(/\D/g, '');
+const isRepeatedDigits = (value) => /^(\d)\1+$/.test(value);
+
+function isValidCPF(value) {
+    const cpf = onlyDigits(value);
+    if (cpf.length !== 11 || isRepeatedDigits(cpf)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i += 1) {
+        sum += Number(cpf[i]) * (10 - i);
+    }
+    let digit = (sum * 10) % 11;
+    if (digit === 10) digit = 0;
+    if (digit !== Number(cpf[9])) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i += 1) {
+        sum += Number(cpf[i]) * (11 - i);
+    }
+    digit = (sum * 10) % 11;
+    if (digit === 10) digit = 0;
+    return digit === Number(cpf[10]);
+}
+
+function isValidCNPJ(value) {
+    const cnpj = onlyDigits(value);
+    if (cnpj.length !== 14 || isRepeatedDigits(cnpj)) return false;
+
+    const calcDigit = (base, weights) => {
+        let sum = 0;
+        for (let i = 0; i < weights.length; i += 1) {
+            sum += Number(base[i]) * weights[i];
+        }
+        const remainder = sum % 11;
+        return remainder < 2 ? 0 : 11 - remainder;
+    };
+
+    const firstDigit = calcDigit(cnpj, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    if (firstDigit !== Number(cnpj[12])) return false;
+
+    const secondDigit = calcDigit(cnpj, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    return secondDigit === Number(cnpj[13]);
+}
+
+async function cnpjExists(value) {
+    const cnpj = onlyDigits(value);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    try {
+        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
+            signal: controller.signal,
+        });
+        if (!response.ok) return false;
+
+        const data = await response.json();
+        return !!data?.cnpj;
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timeout);
+    }
+}
+
 function ThemeIcon({ theme }) {
     if (theme === 'light') {
         return (
@@ -50,7 +114,7 @@ export default function Register() {
     const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
     const applyMask = (value, name) => {
-        const cleanValue = value.replace(/\D/g, '');
+        const cleanValue = onlyDigits(value);
 
         if (name === 'documento') {
             if (perfil === 'reciclador') {
@@ -99,6 +163,16 @@ export default function Register() {
         e.preventDefault();
         setErro('');
 
+        if (perfil === 'reciclador' && !isValidCPF(formData.documento)) {
+            setErro('CPF invalido. Confira os numeros informados.');
+            return;
+        }
+
+        if (perfil === 'gerador' && !isValidCNPJ(formData.documento)) {
+            setErro('CNPJ invalido. Confira os numeros informados.');
+            return;
+        }
+
         if (formData.senha !== formData.confirmarSenha) {
             setErro('As senhas nao coincidem.');
             return;
@@ -112,6 +186,22 @@ export default function Register() {
         setLoading(true);
         const emailRedirectTo = import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/login`;
 
+        if (perfil === 'gerador') {
+            const exists = await cnpjExists(formData.documento);
+            if (exists === false) {
+                setLoading(false);
+                setErro('CNPJ nao encontrado na base publica da Receita.');
+                return;
+            }
+            if (exists === null) {
+                setLoading(false);
+                setErro('Nao foi possivel validar o CNPJ online agora. Tente novamente.');
+                return;
+            }
+        }
+
+        const documentoLimpo = onlyDigits(formData.documento);
+
         const { data, error } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.senha,
@@ -120,7 +210,7 @@ export default function Register() {
                 data: {
                     nome: formData.nome,
                     perfil: perfil === 'gerador' ? 'Empresa' : 'Usuario',
-                    documento: formData.documento,
+                    documento: documentoLimpo,
                     telefone: formData.telefone
                 }
             }
@@ -143,7 +233,7 @@ export default function Register() {
                 email: data.user.email,
                 nome: meta.nome || formData.nome || 'Usuario',
                 perfil: meta.perfil || (perfil === 'gerador' ? 'Empresa' : 'Usuario'),
-                documento: meta.documento || formData.documento || '',
+                documento: meta.documento || documentoLimpo || '',
                 telefone: meta.telefone || formData.telefone || ''
             };
 
