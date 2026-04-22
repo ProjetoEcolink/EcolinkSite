@@ -1,0 +1,279 @@
+/* =========================================
+   1. ESTRUTURA E CONTAINER
+   ========================================= */
+.problem-section {
+    position: relative;
+    width: 100%;
+    padding: 8rem 0;
+    background-color: var(--bg-primary); /* Dark mode sóbrio (#121212) */
+    color: var(--text-description);
+    font-family: 'Inter', system-ui, sans-serif;
+    border-top: 1px solid var(--ui-border);
+    overflow: hidden;
+}
+
+.problem-container {
+    position: relative;
+    z-index: 10;
+    max-width: 1440px;
+    width: 90%;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 6rem;
+}
+
+@media (max-width: 1024px) {
+    .problem-container {
+        flex-direction: column-reverse;
+        gap: 5rem;
+    }
+}
+
+/* =========================================
+   2. STACK DE DASHBOARDS (A INOVAÇÃO DE UI)
+   ========================================= */
+.problem-visual-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 450px;
+    width: 100%;
+}
+
+.ui-fragments-stack {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: center;
+}
+
+/* Glow de Fundo */
+.problem-graphic-glow {
+    position: absolute;
+    width: 80%;
+    height: 80%;
+    background-color: var(--brand-main);
+    opacity: 0.08;
+    filter: blur(100px);
+    border-radius: 50%;
+    z-index: 0;
+}
+
+/* Os Cartões de Interface (Glassmorphism) */
+.ui-fragment-card {
+    position: relative;
+    width: 100%;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--ui-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.15);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: center center;
+}
+
+/* Estado: DESFOCADO (No fundo) */
+.ui-fragment-card.unfocused {
+    transform: scale(0.98);
+    opacity: 0.85;
+    z-index: 1;
+    border-color: var(--ui-border);
+    filter: grayscale(20%);
+}
+
+/* Estado: FOCADO (Saltando para a frente) */
+.ui-fragment-card.focused {
+    transform: scale(1.05);
+    opacity: 1;
+    z-index: 10;
+    border-color: var(--brand-main); /* Borda verde premium do EcoLink */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 0 45px rgba(16, 185, 129, 0.5);
+    filter: grayscale(0%);
+}
+
+/* Detalhes internos do Cartão (Simulando o Sistema) */
+.fragment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--ui-border);
+    margin-bottom: 1rem;
+}
+
+.fragment-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+.dot-warning { background-color: #F59E0B; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+.dot-danger { background-color: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+
+.fragment-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.fragment-body { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.data-label { color: var(--text-description); }
+.data-value { color: var(--text-main); font-weight: 600; }
+.warning-text { color: #F59E0B; }
+.danger-text { color: #EF4444; }
+
+.progress-bar-container {
+    width: 100%;
+    height: 6px;
+    background-color: var(--ui-border);
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+.warning-bar { background-color: #F59E0B; height: 100%; border-radius: 4px; }
+
+.alert-box {
+    background-color: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.document-mockup {
+    background-color: var(--bg-primary);
+    border: 1px dashed var(--ui-border);
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.doc-line { height: 4px; background-color: var(--ui-border); border-radius: 2px; }
+.w-100 { width: 100%; }
+.w-75 { width: 75%; }
+.doc-status { font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; }
+.mt-2 { margin-top: 0.5rem; }
+
+/* =========================================
+   3. COLUNA DE TEXTO (DIREITA)
+   ========================================= */
+.problem-text-content {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+}
+
+.problem-title {
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    margin-bottom: 1.5rem;
+    color: var(--text-main);
+}
+
+.text-highlight { color: var(--brand-main); }
+
+.problem-subtitle {
+    font-size: 1.125rem;
+    color: var(--text-description);
+    line-height: 1.6;
+    margin-bottom: 3rem;
+    max-width: 600px;
+}
+/* =========================================
+   4. LISTA INTERATIVA (CAIXAS VISÍVEIS)
+   ========================================= */
+.problem-list {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column;
+    gap: 2rem; /* <-- AUMENTADO: Muito mais respiro entre as opções */
+}
+
+/* Estado Base: Caixas sempre visíveis e delimitadas */
+.problem-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    background: var(--bg-secondary); /* Fundo sutil para marcar a caixa */
+    padding: 1.5rem 1.75rem;
+    border-radius: 16px;
+    border: 1px solid var(--ui-border); /* Borda fixa para separar visualmente */
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Estado Ativo: Caixa ganha destaque e borda verde */
+.problem-list li.active-list-item {
+    background: var(--bg-secondary);
+    border-color: rgba(16, 185, 129, 0.5); /* Borda verde premium do EcoLink */
+    transform: translateX(10px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* Sombra para soltar a caixa do fundo */
+}
+
+.list-icon-container {
+    flex-shrink: 0;
+    width: 36px; height: 36px; /* Aumentei levemente o ícone */
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-description);
+    font-weight: bold; font-size: 0.9rem;
+    margin-top: 3px;
+    transition: all 0.3s ease;
+}
+
+/* Botão de X muda para o verde da marca quando ativo */
+.problem-list li.active-list-item .list-icon-container {
+    background-color: var(--brand-main);
+    border-color: var(--brand-main);
+    color: #121212; /* Contraste forte e legível */
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.list-text h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.25rem;
+    color: var(--text-description); /* Textos apagados até o usuário focar */
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.problem-list li.active-list-item .list-text h4 {
+    color: var(--text-main); /* Acende em branco puro */
+    font-weight: 700;
+}
+
+.list-text p {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text-description);
+    line-height: 1.6;
+    opacity: 0.7; /* Mantém a leitura secundária mais discreta */
+    transition: opacity 0.3s ease;
+}
+
+.problem-list li.active-list-item .list-text p { 
+    opacity: 1; /* Texto principal totalmente legível ao passar o mouse */
+}
