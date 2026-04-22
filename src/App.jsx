@@ -1,5 +1,6 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { supabase } from './supabaseClient';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -15,8 +16,11 @@ import AboutSection from './sections/AboutSection/AboutSection';
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import Profile from './pages/Profile/Profile';
+import Marketplace from './pages/Marketplace/Marketplace';
+import Painel from './pages/Painel/Painel';
+import Cadastro from './pages/Cadastro/Cadastro';
 
-// Landing Page agora fica em uma rota separada
+// Landing Page
 const LandingPage = () => (
   <>
     <section id="home"><HeroSection /></section>
@@ -26,48 +30,76 @@ const LandingPage = () => (
   </>
 );
 
-const LayoutHandler = ({ children }) => {
-  const location = useLocation();
-  
-  // Adicionamos o "/" (raiz) na lista de ocultar Navbar/Footer, pois agora é o Login
-  const hideLayout = ['/', '/login', '/register'].includes(location.pathname);
+// Rota protegida — redireciona pro login se não logado
+const ProtectedRoute = ({ session, children }) => {
+    if (session === null) return null; // ainda carregando
+    if (!session) return <Navigate to="/login" replace />;
+    return children;
+};
 
-  return (
-    <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      {!hideLayout && <Navbar />}
-      <main style={{ flex: '1 0 auto' }}>
-        {children}
-      </main>
-      {!hideLayout && <Footer />}
-    </div>
-  );
+const LayoutHandler = ({ children }) => {
+    const location = useLocation();
+    const hideLayout = ['/login', '/register'].includes(location.pathname); // ← removido '/'
+
+    return (
+        <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            {!hideLayout && <Navbar />}
+            <main style={{ flex: '1 0 auto' }}>
+                {children}
+            </main>
+            {!hideLayout && <Footer />}
+        </div>
+    );
 };
 
 function App() {
-  return (
-    <BrowserRouter>
-      <LayoutHandler>
-        <Routes>
-          {/* MUDANÇA AQUI: O Login agora é a tela inicial */}
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          
-          {/* Landing Page acessível via /home */}
-          <Route path="/home" element={<LandingPage />} />
-          
-          <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
-          
-          <Route path="*" element={
-            <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
-              <h1>404</h1>
-              <p>Página não encontrada</p>
-            </div>
-          } />
-        </Routes>
-      </LayoutHandler>
-    </BrowserRouter>
-  );
+    const [session, setSession] = useState(null);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session || false);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session || false);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    return (
+        <BrowserRouter>
+            <LayoutHandler>
+                <Routes>
+                    {/* Raiz — Landing Page pública para todos */}
+                    <Route path="/" element={<LandingPage />} />
+
+                    {/* /home também mostra a Landing Page */}
+                    <Route path="/home" element={<LandingPage />} />
+
+                    {/* Auth — sem navbar */}
+                    <Route path="/login"    element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+
+                    {/* App — com navbar, público */}
+                    <Route path="/marketplace" element={<Marketplace />} />
+
+                    {/* App — com navbar, protegido */}
+                    <Route path="/painel"   element={<ProtectedRoute session={session}><Painel /></ProtectedRoute>} />
+                    <Route path="/cadastro" element={<ProtectedRoute session={session}><Cadastro /></ProtectedRoute>} />
+                    <Route path="/profile"  element={<ProtectedRoute session={session}><Profile /></ProtectedRoute>} />
+
+                    {/* 404 */}
+                    <Route path="*" element={
+                        <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
+                            <h1>404</h1>
+                            <p>Página não encontrada</p>
+                        </div>
+                    } />
+                </Routes>
+            </LayoutHandler>
+        </BrowserRouter>
+    );
 }
 
 export default App;

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import './HeroSection.css';
 
 export default function HeroSection() {
@@ -39,10 +39,7 @@ export default function HeroSection() {
 
                 <div className="hero-buttons">
                     <button className="btn-primary">
-                        Entrar na Lista de Espera
-                    </button>
-                    <button className="btn-secondary">
-                        Entenda a Plataforma ↓
+                        Quero Fazer Parte
                     </button>
                 </div>
 
