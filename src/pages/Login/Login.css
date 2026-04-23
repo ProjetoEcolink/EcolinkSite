@@ -37,6 +37,46 @@
     background-color: var(--bg-primary);
 }
 
+.auth-back-btn {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
+    border: 1px solid color-mix(in srgb, var(--green-eco) 52%, var(--ui-border));
+    border-radius: 999px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    z-index: 100;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(6px);
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+}
+
+.auth-back-btn-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.auth-back-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--green-eco);
+    background: color-mix(in srgb, var(--bg-secondary) 94%, transparent);
+    box-shadow: 0 14px 30px rgba(16, 185, 129, 0.2);
+}
+
+.auth-back-btn:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--green-eco) 40%, transparent);
+    outline-offset: 2px;
+}
+
 .theme-toggle-icon {
     width: 18px;
     height: 18px;
@@ -242,5 +282,12 @@
     .auth-theme-toggle {
         top: 20px;
         right: 20px;
+    }
+
+    .auth-back-btn {
+        top: 20px;
+        left: 16px;
+        padding: 9px 12px;
+        font-size: 0.82rem;
     }
 }

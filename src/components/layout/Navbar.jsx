@@ -112,9 +112,14 @@ export default function Navbar() {
 
                 <div className="nav-menu">
                     <div className="nav-links">
-                        <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
-                        <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
-                        <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
+                        {!isLogado && (
+                            <>
+                                <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
+                                <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
+                                <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
+                                <button onClick={() => goToSection('quem-somos')} className="nav-link-btn">Nossa História</button>
+                            </>
+                        )}
 
                         {isLogado && (
                             <>

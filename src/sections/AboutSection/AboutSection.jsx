@@ -16,7 +16,7 @@ export default function AboutSection() {
 
                     <div className="about-manifesto">
                         <p>
-                            O EcoLink não é apenas uma plataforma de descarte; é uma infraestrutura tecnológica projetada para resolver um dos maiores gargalos do mundo corporativo: a gestão de fim de vida útil de ativos de TI.
+                            O EcoLink não é apenas uma plataforma de descarte; é uma infraestrutura tecnológica projetada para resolver um dos maiores gargalos do mundo corparativo e no dia-a-dia das pessoas:a fim de trazer um mundo mais ecológico.
                         </p>
                         <p>
                             Nascemos da união entre a engenharia ambiental de precisão e o desenvolvimento de software de alta performance. Entendemos que o mercado de reciclagem eletrônica era fragmentado, opaco e cheio de riscos ocultos para as grandes corporações. 

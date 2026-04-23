@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiArrowLeft } from 'react-icons/fi';
 import { supabase } from '../../supabaseClient';
 import './Login.css';
 
@@ -33,6 +34,7 @@ function ThemeIcon({ theme }) {
 
 export default function Login() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [formData, setFormData] = useState({ email: '', senha: '' });
     const [loading, setLoading] = useState(false);
 
@@ -48,6 +50,20 @@ export default function Login() {
         return () => observer.disconnect();
     }, []);
 
+    useEffect(() => {
+        localStorage.setItem('ecolink-last-auth-page', 'login');
+
+        const params = new URLSearchParams(location.search);
+        const emailFromQuery = params.get('email') || '';
+        const emailFromStorage = localStorage.getItem('pendingAuthEmail') || '';
+        const emailToUse = (emailFromQuery || emailFromStorage).trim();
+
+        if (emailToUse) {
+            setFormData((prev) => ({ ...prev, email: emailToUse }));
+            localStorage.setItem('pendingAuthEmail', emailToUse);
+        }
+    }, [location.search]);
+
     const toggleTheme = () => {
         const next = theme === 'light' ? 'dark' : 'light';
         document.documentElement.setAttribute('data-theme', next);
@@ -56,7 +72,12 @@ export default function Login() {
     };
 
     const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+
+        if (name === 'email') {
+            localStorage.setItem('pendingAuthEmail', value.trim());
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -67,6 +88,8 @@ export default function Login() {
             email: formData.email,
             password: formData.senha,
         });
+
+        localStorage.setItem('pendingAuthEmail', formData.email.trim());
 
         if (error) {
             alert('Erro ao entrar: ' + error.message);
@@ -91,6 +114,17 @@ export default function Login() {
         <div className="auth-page">
             <button className="auth-theme-toggle" onClick={toggleTheme} aria-label="Mudar tema" type="button">
                 <ThemeIcon theme={theme} />
+            </button>
+
+            <button
+                className="auth-back-btn"
+                onClick={() => navigate('/')}
+                title="Voltar para Home"
+                aria-label="Voltar para Home"
+                type="button"
+            >
+                <FiArrowLeft className="auth-back-btn-icon" aria-hidden="true" />
+                <span>Voltar para Home</span>
             </button>
 
             <div className="auth-container">
@@ -141,7 +175,7 @@ export default function Login() {
                     </button>
 
                     <p className="auth-footer-link" style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-description)', fontSize: '0.9rem' }}>
-                        Ainda não tem uma conta? <Link to="/register" style={{ color: 'var(--green-eco)', fontWeight: 'bold', textDecoration: 'none' }}>Cadastre-se aqui.</Link>
+                        Ainda não tem uma conta? <Link to={formData.email ? `/register?email=${encodeURIComponent(formData.email.trim())}` : '/register'} style={{ color: 'var(--green-eco)', fontWeight: 'bold', textDecoration: 'none' }}>Cadastre-se aqui.</Link>
                     </p>
                 </form>
             </div>
