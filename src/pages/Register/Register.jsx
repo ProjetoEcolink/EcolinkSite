@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiArrowLeft } from 'react-icons/fi';
 import { supabase } from '../../supabaseClient';
 import './Register.css';
 
@@ -14,16 +15,16 @@ function isValidCPF(value) {
     for (let i = 0; i < 9; i += 1) {
         sum += Number(cpf[i]) * (10 - i);
     }
-    let digit = (sum * 10) % 11;
-    if (digit === 10) digit = 0;
+    let digit = 11 - (sum % 11);
+    if (digit > 9) digit = 0;
     if (digit !== Number(cpf[9])) return false;
 
     sum = 0;
     for (let i = 0; i < 10; i += 1) {
         sum += Number(cpf[i]) * (11 - i);
     }
-    digit = (sum * 10) % 11;
-    if (digit === 10) digit = 0;
+    digit = 11 - (sum % 11);
+    if (digit > 9) digit = 0;
     return digit === Number(cpf[10]);
 }
 
@@ -110,7 +111,7 @@ const EyeClosed = () => (
 );
 
 export default function Register() {
-    const [perfil, setPerfil] = useState('reciclador');
+    const [perfil, setPerfil] = useState('pessoa_fisica');
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState('');
     const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
@@ -123,10 +124,25 @@ export default function Register() {
     });
 
     const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
+
+    useEffect(() => {
+        localStorage.setItem('ecolink-last-auth-page', 'register');
+
+        const params = new URLSearchParams(location.search);
+        const emailFromQuery = params.get('email') || '';
+        const emailFromStorage = localStorage.getItem('pendingAuthEmail') || '';
+        const emailToUse = (emailFromQuery || emailFromStorage).trim();
+
+        if (emailToUse) {
+            setFormData((prev) => ({ ...prev, email: emailToUse }));
+            localStorage.setItem('pendingAuthEmail', emailToUse);
+        }
+    }, [location.search]);
 
     const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
@@ -134,7 +150,7 @@ export default function Register() {
         const cleanValue = onlyDigits(value);
 
         if (name === 'documento') {
-            if (perfil === 'reciclador') {
+            if (perfil === 'pessoa_fisica') {
                 return cleanValue
                     .replace(/(\d{3})(\d)/, '$1.$2')
                     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -168,6 +184,10 @@ export default function Register() {
             value = applyMask(value, name);
         }
 
+        if (name === 'email') {
+            localStorage.setItem('pendingAuthEmail', value.trim());
+        }
+
         setFormData({ ...formData, [name]: value });
     };
 
@@ -180,12 +200,24 @@ export default function Register() {
         e.preventDefault();
         setErro('');
 
-        if (perfil === 'reciclador' && !isValidCPF(formData.documento)) {
+        const documentoLimpo = onlyDigits(formData.documento);
+
+        if (perfil === 'pessoa_fisica' && documentoLimpo.length !== 11) {
+            setErro('CPF deve conter 11 numeros.');
+            return;
+        }
+
+        if (perfil === 'empresa' && documentoLimpo.length !== 14) {
+            setErro('CNPJ deve conter 14 numeros.');
+            return;
+        }
+
+        if (perfil === 'pessoa_fisica' && !isValidCPF(formData.documento)) {
             setErro('CPF invalido. Confira os numeros informados.');
             return;
         }
 
-        if (perfil === 'gerador' && !isValidCNPJ(formData.documento)) {
+        if (perfil === 'empresa' && !isValidCNPJ(formData.documento)) {
             setErro('CNPJ invalido. Confira os numeros informados.');
             return;
         }
@@ -203,7 +235,7 @@ export default function Register() {
         setLoading(true);
         const emailRedirectTo = import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/login`;
 
-        if (perfil === 'gerador') {
+        if (perfil === 'empresa') {
             const exists = await cnpjExists(formData.documento);
             if (exists === false) {
                 setLoading(false);
@@ -217,8 +249,6 @@ export default function Register() {
             }
         }
 
-        const documentoLimpo = onlyDigits(formData.documento);
-
         const { data, error } = await supabase.auth.signUp({
             email: formData.email,
             password: formData.senha,
@@ -226,7 +256,7 @@ export default function Register() {
                 emailRedirectTo,
                 data: {
                     nome: formData.nome,
-                    perfil: perfil === 'gerador' ? 'Empresa' : 'Usuario',
+                    perfil: perfil === 'empresa' ? 'Empresa' : 'Pessoa Fisica',
                     documento: documentoLimpo,
                     telefone: formData.telefone
                 }
@@ -249,7 +279,7 @@ export default function Register() {
             const usuarioParaSalvar = {
                 email: data.user.email,
                 nome: meta.nome || formData.nome || 'Usuario',
-                perfil: meta.perfil || (perfil === 'gerador' ? 'Empresa' : 'Usuario'),
+                perfil: meta.perfil || (perfil === 'empresa' ? 'Empresa' : 'Pessoa Fisica'),
                 documento: meta.documento || documentoLimpo || '',
                 telefone: meta.telefone || formData.telefone || ''
             };
@@ -270,6 +300,17 @@ export default function Register() {
                 <ThemeIcon theme={theme} />
             </button>
 
+            <button
+                className="auth-back-btn"
+                onClick={() => navigate('/')}
+                title="Voltar para Home"
+                aria-label="Voltar para Home"
+                type="button"
+            >
+                <FiArrowLeft className="auth-back-btn-icon" aria-hidden="true" />
+                <span>Voltar para Home</span>
+            </button>
+
             <div className="auth-container">
                 <div className="auth-brand">Eco<span className="text-eco">Link</span></div>
 
@@ -281,36 +322,36 @@ export default function Register() {
                 <div className="perfil-toggle">
                     <button
                         type="button"
-                        className={`perfil-toggle-btn ${perfil === 'reciclador' ? 'active' : ''}`}
-                        onClick={() => handleSelectPerfil('reciclador')}
+                        className={`perfil-toggle-btn ${perfil === 'pessoa_fisica' ? 'active' : ''}`}
+                        onClick={() => handleSelectPerfil('pessoa_fisica')}
                     >
-                        Reciclador
+                        Pessoa Fisica
                     </button>
                     <button
                         type="button"
-                        className={`perfil-toggle-btn ${perfil === 'gerador' ? 'active' : ''}`}
-                        onClick={() => handleSelectPerfil('gerador')}
+                        className={`perfil-toggle-btn ${perfil === 'empresa' ? 'active' : ''}`}
+                        onClick={() => handleSelectPerfil('empresa')}
                     >
-                        Gerador
+                        Empresa
                     </button>
                 </div>
 
                 <p className="perfil-desc">
-                    {perfil === 'reciclador'
-                        ? 'Coletor ou parceiro que compra e processa residuos eletronicos.'
+                    {perfil === 'pessoa_fisica'
+                        ? 'Pessoa fisica que deseja vender ou destinar equipamentos com seguranca.'
                         : 'Empresa que descarta equipamentos com seguranca e compliance ESG.'}
                 </p>
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label className="form-label">
-                            {perfil === 'gerador' ? 'Razao Social' : 'Nome Completo'}
+                            {perfil === 'empresa' ? 'Razao Social' : 'Nome Completo'}
                         </label>
                         <input
                             type="text"
                             name="nome"
                             className="form-input"
-                            placeholder={perfil === 'gerador' ? 'Nome da empresa' : 'Seu nome completo'}
+                            placeholder={perfil === 'empresa' ? 'Nome da empresa' : 'Seu nome completo'}
                             value={formData.nome}
                             onChange={handleInputChange}
                             required
@@ -320,14 +361,14 @@ export default function Register() {
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">
-                                {perfil === 'gerador' ? 'CNPJ' : 'CPF'}
+                                {perfil === 'empresa' ? 'CNPJ' : 'CPF'}
                             </label>
                             <input
                                 type="text"
                                 name="documento"
                                 className="form-input"
                                 value={formData.documento}
-                                placeholder={perfil === 'gerador' ? '00.000.000/0000-00' : '000.000.000-00'}
+                                placeholder={perfil === 'empresa' ? '00.000.000/0000-00' : '000.000.000-00'}
                                 onChange={handleInputChange}
                                 required
                             />
@@ -348,13 +389,13 @@ export default function Register() {
 
                     <div className="form-group">
                         <label className="form-label">
-                            {perfil === 'gerador' ? 'E-mail Corporativo' : 'E-mail'}
+                            {perfil === 'empresa' ? 'E-mail Corporativo' : 'E-mail'}
                         </label>
                         <input
                             type="email"
                             name="email"
                             className="form-input"
-                            placeholder={perfil === 'gerador' ? 'contato@empresa.com.br' : 'seu@email.com'}
+                            placeholder={perfil === 'empresa' ? 'contato@empresa.com.br' : 'seu@email.com'}
                             value={formData.email}
                             onChange={handleInputChange}
                             required
@@ -422,7 +463,7 @@ export default function Register() {
                     </button>
 
                     <p className="auth-footer-link">
-                        Ja tem conta? <Link to="/login">Entrar</Link>
+                        Ja tem conta? <Link to={formData.email ? `/login?email=${encodeURIComponent(formData.email.trim())}` : '/login'}>Entrar</Link>
                     </p>
                 </form>
             </div>

@@ -1,7 +1,10 @@
 ﻿import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './HeroSection.css';
 
 export default function HeroSection() {
+    const navigate = useNavigate();
+
     return (
         <section id="home" className="hero-section">
             <div className="hero-floating-elements">
@@ -38,8 +41,8 @@ export default function HeroSection() {
                 </p>
 
                 <div className="hero-buttons">
-                    <button className="btn-primary">
-                        Quero Fazer Parte
+                    <button className="btn-primary" onClick={() => navigate('/register')}>
+                        Quero meu acesso
                     </button>
                 </div>
 

@@ -4,7 +4,7 @@ import './Cadastro.css';
 
 export default function Cadastro() {
     // Estados do formulário
-    const [perfil, setPerfil] = useState(''); // 'gerador' ou 'reciclador'
+    const [perfil, setPerfil] = useState(''); // 'empresa' ou 'pessoa_fisica'
     const [formData, setFormData] = useState({
         nome: '',
         email: '',
@@ -23,7 +23,7 @@ export default function Cadastro() {
         e.preventDefault();
 
         if (!perfil) {
-            alert('Por favor, selecione qual é o seu perfil (Gerador ou Reciclador).');
+            alert('Por favor, selecione qual e o seu perfil (Empresa ou Pessoa Fisica).');
             return;
         }
 
@@ -78,24 +78,24 @@ export default function Cadastro() {
                         <label className="form-label">Qual é o seu objetivo principal?</label>
                         <div className="perfil-selection">
 
-                            {/* Cartão Gerador */}
+                            {/* Cartao Empresa */}
                             <div
-                                className={`perfil-card ${perfil === 'gerador' ? 'selected' : ''}`}
-                                onClick={() => setPerfil('gerador')}
+                                className={`perfil-card ${perfil === 'empresa' ? 'selected' : ''}`}
+                                onClick={() => setPerfil('empresa')}
                             >
                                 <div className="perfil-icon">🏢</div>
-                                <h4>Sou Gerador</h4>
+                                <h4>Sou Empresa</h4>
                                 <p>Quero vender lotes de equipamentos de TI obsoletos.</p>
                             </div>
 
-                            {/* Cartão Reciclador */}
+                            {/* Cartao Pessoa Fisica */}
                             <div
-                                className={`perfil-card ${perfil === 'reciclador' ? 'selected' : ''}`}
-                                onClick={() => setPerfil('reciclador')}
+                                className={`perfil-card ${perfil === 'pessoa_fisica' ? 'selected' : ''}`}
+                                onClick={() => setPerfil('pessoa_fisica')}
                             >
-                                <div className="perfil-icon">♻️</div>
-                                <h4>Sou Reciclador</h4>
-                                <p>Quero comprar materiais e possuo licença ambiental.</p>
+                                <div className="perfil-icon">👤</div>
+                                <h4>Sou Pessoa Fisica</h4>
+                                <p>Quero vender ou destinar equipamentos de forma segura.</p>
                             </div>
 
                         </div>
