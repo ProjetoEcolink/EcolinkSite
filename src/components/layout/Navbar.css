@@ -35,7 +35,9 @@
     letter-spacing: -0.02em;
 }
 
-.text-eco { color: var(--brand-main); }
+.text-eco {
+    color: var(--brand-main);
+}
 
 /* Centro */
 .nav-menu {
@@ -227,13 +229,209 @@
 
 /* Mobile */
 @media (max-width: 850px) {
-    .nav-links { display: none; }
+    .nav-links {
+        display: none;
+    }
+
     .nav-menu {
         flex: 0 0 auto;
     }
+
     .nav-utility-group {
         padding-left: 0;
         margin-left: 0;
         border-left: none;
     }
+}
+
+/* =========================================
+   TOUR GUIADO (SPOTLIGHT MÁGICO)
+   ========================================= */
+
+/* O fundo transparente que bloqueia os cliques do usuário durante o tutorial */
+.tour-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    /* Fundo escuro apenas para o passo 1 */
+    z-index: 9998;
+    animation: fadeInTour 0.3s ease;
+}
+
+/* Quando o holofote entra em cena, o backdrop fica invisível e deixa o holofote escurecer a tela */
+.tour-backdrop-transparente {
+    background-color: transparent !important;
+}
+
+/* A "Janela Vazada" que fica 100% clara por dentro e escurece tudo por fora */
+.tour-holofote-box {
+    position: fixed;
+    z-index: 9999;
+    border-radius: 8px;
+    pointer-events: none;
+    /* Deixa os cliques passarem direto (mas o backdrop bloqueia) */
+
+    /* A MÁGICA ACONTECE AQUI: 
+       A primeira sombra é a bordinha verde. 
+       A segunda sombra tem 9999px de tamanho, o que escurece a tela INTEIRA! */
+    box-shadow: 0 0 0 3px var(--brand-main, #10b981), 0 0 0 9999px rgba(0, 0, 0, 0.75);
+
+    /* A transição suave faz o holofote deslizar de um botão pro outro */
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* O Balão de Fala */
+.tour-balao {
+    position: fixed;
+    width: 320px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1), left 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Modo Centralizado (Para o primeiro passo) */
+.tour-central {
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 380px;
+}
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: translateY(15px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tour-central.tour-balao {
+    animation: popInCenter 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popInCenter {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -40%) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* A Setinha do Balão (Triângulo) */
+.tour-seta {
+    position: absolute;
+    top: -10px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid var(--bg-secondary);
+    filter: drop-shadow(0 -2px 1px rgba(0, 0, 0, 0.05));
+    transition: left 0.4s ease;
+}
+
+.seta-center {
+    left: calc(50% - 10px);
+}
+
+.seta-left {
+    left: 20px;
+}
+
+.seta-right {
+    right: 30px;
+}
+
+/* Conteúdo interno do Balão */
+.tour-content {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+}
+
+.tour-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.tour-title {
+    color: var(--text-main);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    margin-top: 0;
+}
+
+.tour-text {
+    color: var(--text-description);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Rodapé do Balão (Botões) */
+.tour-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--ui-border);
+    padding-top: 15px;
+}
+
+.tour-contador {
+    color: var(--text-description);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tour-botoes {
+    display: flex;
+    gap: 10px;
+}
+
+.tour-btn-pular {
+    background: transparent;
+    border: none;
+    color: var(--text-description);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.tour-btn-pular:hover {
+    color: var(--text-main);
+}
+
+.tour-btn-proximo {
+    background-color: var(--brand-main, #10b981);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    transition: transform 0.2s;
+}
+
+.tour-btn-proximo:hover {
+    transform: translateY(-2px);
 }

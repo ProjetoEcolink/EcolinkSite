@@ -95,11 +95,28 @@ function ThemeIcon({ theme }) {
     );
 }
 
+const EyeOpen = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+);
+
+const EyeClosed = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+    </svg>
+);
+
 export default function Register() {
     const [perfil, setPerfil] = useState('reciclador');
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState('');
     const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
+    
+    // Apenas UM estado para controlar as duas senhas
+    const [mostrarSenha, setMostrarSenha] = useState(false);
 
     const [formData, setFormData] = useState({
         nome: '', email: '', senha: '', confirmarSenha: '', documento: '', telefone: ''
@@ -347,27 +364,42 @@ export default function Register() {
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">Senha</label>
-                            <input
-                                type="password"
-                                name="senha"
-                                className="form-input"
-                                placeholder="********"
-                                value={formData.senha}
-                                onChange={handleInputChange}
-                                required
-                            />
+                            
+                            <div className="password-input-wrapper">
+                                <input
+                                    type={mostrarSenha ? "text" : "password"}
+                                    name="senha"
+                                    className="form-input password-input"
+                                    placeholder="********"
+                                    value={formData.senha}
+                                    onChange={handleInputChange}
+                                    required
+                                />
+                                <button 
+                                    type="button" 
+                                    className="password-toggle-btn"
+                                    onClick={() => setMostrarSenha(!mostrarSenha)}
+                                    tabIndex="-1"
+                                >
+                                    {mostrarSenha ? <EyeOpen /> : <EyeClosed />}
+                                </button>
+                            </div>
+
                         </div>
                         <div className="form-group">
                             <label className="form-label">Confirmar</label>
+                            
+                            {/* O input de confirmar senha agora usa apenas as classes básicas e escuta o estado 'mostrarSenha' */}
                             <input
-                                type="password"
+                                type={mostrarSenha ? "text" : "password"}
                                 name="confirmarSenha"
-                                className="form-input"
+                                className="form-input" 
                                 placeholder="********"
                                 value={formData.confirmarSenha}
                                 onChange={handleInputChange}
                                 required
                             />
+
                         </div>
                     </div>
 

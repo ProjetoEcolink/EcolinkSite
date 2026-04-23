@@ -6,31 +6,6 @@ export default function Footer() {
     <footer className="footer-section">
       <div className="footer-container">
 
-        {/* Caixa de Captura Premium (CTA Final Flutuante) */}
-        <div className="footer-cta-card">
-          <div className="cta-glow"></div>
-          <div className="cta-content">
-            <h2 className="cta-title">Faça parte do futuro da gestão de ativos.</h2>
-            <p className="cta-subtitle">
-              Garanta seu acesso antecipado e descubra quanto sua empresa pode recuperar no próximo descarte de TI.
-            </p>
-          </div>
-
-          <form className="cta-form" onSubmit={(e) => e.preventDefault()}>
-            <div className="input-group-footer">
-              <input
-                type="email"
-                placeholder="Seu e-mail corporativo"
-                className="cta-input"
-                required
-              />
-              <button type="submit" className="cta-button">
-                Quero meu acesso
-              </button>
-            </div>
-          </form>
-        </div>
-
         {/* Rodapé Principal */}
         <div className="footer-main">
 

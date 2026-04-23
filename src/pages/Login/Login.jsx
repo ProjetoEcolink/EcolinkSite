@@ -6,7 +6,7 @@ import './Login.css';
 function ThemeIcon({ theme }) {
     if (theme === 'light') {
         return (
-            <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" width="24" height="24">
                 <path
                     d="M20.354 15.354A9 9 0 1 1 8.646 3.646a7 7 0 0 0 11.708 11.708Z"
                     stroke="currentColor"
@@ -19,7 +19,7 @@ function ThemeIcon({ theme }) {
     }
 
     return (
-        <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" width="24" height="24">
             <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
             <path
                 d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
@@ -89,14 +89,21 @@ export default function Login() {
 
     return (
         <div className="auth-page">
-            <button className="auth-theme-toggle" onClick={toggleTheme} aria-label="Mudar tema" type="button">
-                <ThemeIcon theme={theme} />
-            </button>
+
+            {/* Cabeçalho Falso Limpo */}
+            <header className="auth-topbar">
+                <Link to="/home" style={{ textDecoration: 'none' }}>
+                    <div className="auth-topbar-logo">
+                        Eco<span className="text-eco">Link</span>
+                    </div>
+                </Link>
+
+                <button onClick={toggleTheme} aria-label="Mudar tema" type="button" className="auth-theme-toggle">
+                    <ThemeIcon theme={theme} />
+                </button>
+            </header>
 
             <div className="auth-container">
-                <div className="auth-brand">
-                    Eco<span className="text-eco">Link</span>
-                </div>
 
                 <div className="auth-header">
                     <h2>Bem-vindo</h2>
@@ -131,7 +138,7 @@ export default function Login() {
                     </div>
 
                     <div style={{ textAlign: 'right', marginTop: '-10px' }}>
-                        <Link to="/esqueci-senha" style={{ color: 'var(--green-eco)', textDecoration: 'none', fontSize: '0.85rem' }}>
+                        <Link to="/esqueci-senha" style={{ color: 'var(--green-eco, #28a745)', textDecoration: 'none', fontSize: '0.85rem' }}>
                             Esqueceu sua senha?
                         </Link>
                     </div>
@@ -141,8 +148,15 @@ export default function Login() {
                     </button>
 
                     <p className="auth-footer-link" style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-description)', fontSize: '0.9rem' }}>
-                        Ainda não tem uma conta? <Link to="/register" style={{ color: 'var(--green-eco)', fontWeight: 'bold', textDecoration: 'none' }}>Cadastre-se aqui.</Link>
+                        Ainda não tem uma conta? <Link to="/register" style={{ color: 'var(--green-eco, #28a745)', fontWeight: 'bold', textDecoration: 'none' }}>Cadastre-se aqui.</Link>
                     </p>
+
+                    <Link to="/home" className="auth-back-link">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Voltar para Home
+                    </Link>
                 </form>
             </div>
         </div>
