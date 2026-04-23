@@ -250,20 +250,4 @@
         padding: 0;
         background-color: var(--bg-secondary);
     }
-<<<<<<< HEAD
 }
-=======
-
-    .auth-theme-toggle {
-        top: 20px;
-        right: 20px;
-    }
-
-    .auth-back-btn {
-        top: 20px;
-        left: 16px;
-        padding: 9px 12px;
-        font-size: 0.82rem;
-    }
-}
->>>>>>> 1aa825291d238ce0b178de7305792f8a8f0340f5

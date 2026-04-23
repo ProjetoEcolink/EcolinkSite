@@ -1,6 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiArrowLeft } from 'react-icons/fi';
 import { supabase } from '../../supabaseClient';
 import './Register.css';
 
@@ -115,7 +114,7 @@ export default function Register() {
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState('');
     const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
-    
+
     // Apenas UM estado para controlar as duas senhas
     const [mostrarSenha, setMostrarSenha] = useState(false);
 
@@ -307,7 +306,9 @@ export default function Register() {
                 aria-label="Voltar para Home"
                 type="button"
             >
-                <FiArrowLeft className="auth-back-btn-icon" aria-hidden="true" />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
                 <span>Voltar para Home</span>
             </button>
 
@@ -405,7 +406,7 @@ export default function Register() {
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">Senha</label>
-                            
+
                             <div className="password-input-wrapper">
                                 <input
                                     type={mostrarSenha ? "text" : "password"}
@@ -416,8 +417,8 @@ export default function Register() {
                                     onChange={handleInputChange}
                                     required
                                 />
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="password-toggle-btn"
                                     onClick={() => setMostrarSenha(!mostrarSenha)}
                                     tabIndex="-1"
@@ -429,12 +430,12 @@ export default function Register() {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Confirmar</label>
-                            
+
                             {/* O input de confirmar senha agora usa apenas as classes básicas e escuta o estado 'mostrarSenha' */}
                             <input
                                 type={mostrarSenha ? "text" : "password"}
                                 name="confirmarSenha"
-                                className="form-input" 
+                                className="form-input"
                                 placeholder="********"
                                 value={formData.confirmarSenha}
                                 onChange={handleInputChange}
