@@ -31,8 +31,7 @@ export default function Footer() {
             <p className="brand-description">
               Transformando passivo ambiental em ativo financeiro de forma segura, rastreável e inteligente.
             </p>
-          </div>   
-
+          </div>
 
           {/* Coluna 2: Links Rápidos */}
           <div className="footer-links-group">
