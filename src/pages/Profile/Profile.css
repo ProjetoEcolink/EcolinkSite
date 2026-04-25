@@ -1,0 +1,230 @@
+/* Definições globais de cores */
+:root {
+    --green-eco: #10b981;
+    --red-danger: #ef4444;
+}
+
+/* Container Principal */
+.profile-page {
+    padding: 120px 20px 60px;
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+    display: flex;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.profile-container {
+    width: 100%;
+    max-width: 850px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* Cards de Estilo */
+.profile-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    color: var(--text-main);
+}
+
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.profile-info-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-avatar-box {
+    width: 70px;
+    height: 70px;
+    background: var(--green-eco);
+    color: #ffffff;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+.profile-badge-text {
+    color: var(--green-eco);
+    font-weight: 700;
+    margin-right: 5px;
+}
+
+.text-white { 
+    color: var(--text-main) !important; 
+    margin: 0; 
+    font-size: 1.6rem; 
+}
+
+.text-dim { 
+    color: var(--text-description) !important; 
+    margin: 5px 0 0 0; 
+}
+
+/* Formulário e Inputs (Bug Fix do Modo Claro) */
+.card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.profile-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.form-item {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-item label {
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.input-field {
+    width: 100%;
+    padding: 14px 16px;
+    background-color: var(--bg-primary); /* Sincronizado com o tema */
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    color: var(--text-main); /* Texto sempre visível */
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.input-field.editing {
+    border-color: var(--green-eco);
+    background-color: var(--bg-secondary);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+
+.input-field.readonly {
+    opacity: 0.6;
+    background-color: var(--ui-border);
+    cursor: not-allowed;
+}
+
+/* Botões de Ação */
+.btn-logout-link {
+    background: none;
+    border: none;
+    color: var(--text-description);
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.btn-edit-action {
+    background: var(--ui-border);
+    color: var(--text-main);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-save-full {
+    width: 100%;
+    padding: 16px;
+    background: var(--green-eco);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    margin-top: 35px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+/* Zona de Perigo (Exclusão) */
+.danger-zone-wrapper {
+    margin-top: 45px;
+    padding-top: 30px;
+    border-top: 1px solid var(--ui-border);
+}
+
+.btn-delete-account {
+    background: transparent;
+    color: var(--red-danger);
+    border: 2px solid var(--red-danger);
+    padding: 14px 35px;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-delete-account:hover {
+    background: var(--red-danger);
+    color: white;
+}
+
+/* Modais de Confirmação */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    padding: 40px;
+    border-radius: 24px;
+    text-align: center;
+    border: 1px solid var(--ui-border);
+    width: 420px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.btn-confirm-del {
+    background: var(--red-danger);
+    color: white;
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: #334155;
+    color: white;
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+}

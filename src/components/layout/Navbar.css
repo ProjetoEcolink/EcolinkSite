@@ -1,0 +1,437 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--ui-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    font-family: 'Inter', system-ui, sans-serif;
+    backdrop-filter: blur(10px);
+}
+
+.nav-container {
+    width: 100%;
+    max-width: 1320px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 20px;
+}
+
+/* Esquerda */
+.nav-logo {
+    flex-shrink: 0;
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-main);
+    cursor: pointer;
+    letter-spacing: -0.02em;
+}
+
+.text-eco {
+    color: var(--brand-main);
+}
+
+/* Centro */
+.nav-menu {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.nav-link-btn {
+    background: none;
+    border: none;
+    color: var(--text-description);
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 0;
+    position: relative;
+    transition: color 0.3s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.nav-link-btn:hover {
+    color: var(--brand-main);
+}
+
+.nav-link-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--brand-main);
+    transition: width 0.3s ease;
+}
+
+.nav-link-btn:hover::after {
+    width: 100%;
+}
+
+/* Link ativo */
+.nav-link-active {
+    color: var(--brand-main) !important;
+}
+
+.nav-link-active::after {
+    width: 100% !important;
+}
+
+/* Divisor */
+.nav-divider {
+    display: inline-block;
+    width: 1px;
+    height: 18px;
+    background-color: var(--ui-border);
+    flex-shrink: 0;
+}
+
+/* Direita */
+.nav-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.nav-auth-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-link-login {
+    text-decoration: none;
+    color: var(--text-description);
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: color 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-link-login:hover {
+    color: var(--brand-main);
+}
+
+.nav-user-link {
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    white-space: nowrap;
+}
+
+.nav-user-link:hover {
+    background-color: var(--ui-border);
+    transform: translateY(-1px);
+}
+
+.nav-user-link span {
+    color: var(--brand-main);
+    font-weight: 700;
+    position: relative;
+}
+
+.nav-user-link:hover span::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--brand-main);
+    border-radius: 2px;
+}
+
+.theme-toggle-nav {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--ui-border);
+    background-color: var(--bg-secondary);
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.theme-toggle-nav:hover {
+    transform: translateY(-1px);
+    border-color: var(--text-description);
+    background-color: var(--bg-primary);
+}
+
+.theme-toggle-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.nav-utility-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 10px;
+    margin-left: 4px;
+    border-left: 1px solid var(--ui-border);
+}
+
+.nav-cta {
+    background-color: transparent;
+    color: var(--brand-main);
+    border: 1px solid var(--brand-main);
+    padding: 10px 22px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.nav-cta:hover {
+    background-color: var(--brand-main);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Mobile */
+@media (max-width: 850px) {
+    .nav-links {
+        display: none;
+    }
+
+    .nav-menu {
+        flex: 0 0 auto;
+    }
+
+    .nav-utility-group {
+        padding-left: 0;
+        margin-left: 0;
+        border-left: none;
+    }
+}
+
+/* =========================================
+   TOUR GUIADO (SPOTLIGHT MÁGICO)
+   ========================================= */
+
+/* O fundo transparente que bloqueia os cliques do usuário durante o tutorial */
+.tour-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    /* Fundo escuro apenas para o passo 1 */
+    z-index: 9998;
+    animation: fadeInTour 0.3s ease;
+}
+
+/* Quando o holofote entra em cena, o backdrop fica invisível e deixa o holofote escurecer a tela */
+.tour-backdrop-transparente {
+    background-color: transparent !important;
+}
+
+/* A "Janela Vazada" que fica 100% clara por dentro e escurece tudo por fora */
+.tour-holofote-box {
+    position: fixed;
+    z-index: 9999;
+    border-radius: 8px;
+    pointer-events: none;
+    /* Deixa os cliques passarem direto (mas o backdrop bloqueia) */
+
+    /* A MÁGICA ACONTECE AQUI: 
+       A primeira sombra é a bordinha verde. 
+       A segunda sombra tem 9999px de tamanho, o que escurece a tela INTEIRA! */
+    box-shadow: 0 0 0 3px var(--brand-main, #10b981), 0 0 0 9999px rgba(0, 0, 0, 0.75);
+
+    /* A transição suave faz o holofote deslizar de um botão pro outro */
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* O Balão de Fala */
+.tour-balao {
+    position: fixed;
+    width: 320px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    z-index: 10000;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1), left 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Modo Centralizado (Para o primeiro passo) */
+.tour-central {
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 380px;
+}
+
+@keyframes popIn {
+    0% {
+        opacity: 0;
+        transform: translateY(15px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.tour-central.tour-balao {
+    animation: popInCenter 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popInCenter {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -40%) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* A Setinha do Balão (Triângulo) */
+.tour-seta {
+    position: absolute;
+    top: -10px;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 10px solid var(--bg-secondary);
+    filter: drop-shadow(0 -2px 1px rgba(0, 0, 0, 0.05));
+    transition: left 0.4s ease;
+}
+
+.seta-center {
+    left: calc(50% - 10px);
+}
+
+.seta-left {
+    left: 20px;
+}
+
+.seta-right {
+    right: 30px;
+}
+
+/* Conteúdo interno do Balão */
+.tour-content {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+}
+
+.tour-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.tour-title {
+    color: var(--text-main);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    margin-top: 0;
+}
+
+.tour-text {
+    color: var(--text-description);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Rodapé do Balão (Botões) */
+.tour-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--ui-border);
+    padding-top: 15px;
+}
+
+.tour-contador {
+    color: var(--text-description);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tour-botoes {
+    display: flex;
+    gap: 10px;
+}
+
+.tour-btn-pular {
+    background: transparent;
+    border: none;
+    color: var(--text-description);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.tour-btn-pular:hover {
+    color: var(--text-main);
+}
+
+.tour-btn-proximo {
+    background-color: var(--brand-main, #10b981);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    transition: transform 0.2s;
+}
+
+.tour-btn-proximo:hover {
+    transform: translateY(-2px);
+}
