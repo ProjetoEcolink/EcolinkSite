@@ -19,7 +19,7 @@ const ESTADO_BR_POR_NOME = {
     bahia: 'BA',
     ceara: 'CE',
     'distrito federal': 'DF',
-    espirito santo: 'ES',
+    'espirito santo': 'ES',
     goias: 'GO',
     maranhao: 'MA',
     'mato grosso': 'MT',
