@@ -1,58 +1,226 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Painel.css';
+import { supabase } from '../../supabaseClient';
+import "./Dashboard.css";
 
-export default function Painel() {
+export default function Dashboard() {
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
-    // Estado para guardar os dados do novo anúncio
     const [lote, setLote] = useState({
         titulo: '',
         categoria: 'Monitores',
-        peso: '',
-        local: '',
+        peso_kg: '',
+        cidade: '',
+        estado: '',
         descricao: ''
     });
 
-    const handleInputChange = (e) => {
-        setLote({ ...lote, [e.target.name]: e.target.value });
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [isDragOver, setIsDragOver] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [usuarioData, setUsuarioData] = useState(null);
+
+    useEffect(() => {
+        const carregarUsuario = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const meta = session.user.user_metadata;
+                setUsuarioData({
+                    email: session.user.email,
+                    nome: meta?.nome || '',
+                    telefone: meta?.telefone || '',
+                });
+                return;
+            }
+            const usuarioStr = localStorage.getItem('usuario');
+            if (usuarioStr) {
+                try { setUsuarioData(JSON.parse(usuarioStr)); }
+                catch { navigate('/login'); }
+            } else {
+                navigate('/login');
+            }
+        };
+        carregarUsuario();
+    }, [navigate]);
+
+    const handleInputChange = (e) => setLote({ ...lote, [e.target.name]: e.target.value });
+
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onload = (ev) => setImagePreview(ev.target.result);
+            reader.readAsDataURL(file);
+        } else {
+            alert('Por favor, selecione uma imagem JPG ou PNG.');
+        }
     };
 
-    const handleSubmit = (e) => {
+    const handleDrop = (e) => {
         e.preventDefault();
-
-        // Num cenário real, aqui enviaríamos o 'lote' para a nossa API em Python
-        console.log('Lote registado para IA avaliar e anunciar:', lote);
-
-        alert('Lote registado com sucesso! A nossa equipa (ou IA) vai avaliar e o anúncio irá para a vitrine em breve.');
-
-        // Redireciona o vendedor de volta para ver a vitrine
-        navigate('/marketplace');
+        setIsDragOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
+            setSelectedImage(file);
+            const reader = new FileReader();
+            reader.onload = (ev) => setImagePreview(ev.target.result);
+            reader.readAsDataURL(file);
+        } else {
+            alert('Por favor, arraste uma imagem JPG ou PNG.');
+        }
     };
+
+    const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
+    const handleDragLeave = (e) => { e.preventDefault(); setIsDragOver(false); };
+    const handleDropzoneClick = () => fileInputRef.current.click();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            if (!usuarioData || !selectedImage) {
+                alert('Erro: usuário não identificado ou imagem não selecionada.');
+                setIsSubmitting(false);
+                return;
+            }
+
+            let empresaId = null;
+
+            const { data: empresaExistente } = await supabase
+                .from('empresas')
+                .select('id')
+                .eq('email', usuarioData.email)
+                .limit(1);
+
+            if (empresaExistente && empresaExistente.length > 0) {
+                empresaId = empresaExistente[0].id;
+            } else {
+                const { data: novaEmpresa, error: criarError } = await supabase
+                    .from('empresas')
+                    .insert([{
+                        nome: usuarioData.nome || 'Sem Nome',
+                        email: usuarioData.email,
+                        telefone: usuarioData.telefone || ''
+                    }])
+                    .select()
+                    .limit(1);
+
+                if (criarError) throw new Error(`Erro ao criar perfil: ${criarError.message}`);
+                if (!novaEmpresa || novaEmpresa.length === 0) throw new Error('Não foi possível criar o perfil da empresa.');
+                empresaId = novaEmpresa[0].id;
+            }
+
+            const nomeArquivo = `${Date.now()}-${selectedImage.name}`;
+            const { error: uploadError } = await supabase.storage
+                .from('lotes-fotos')
+                .upload(nomeArquivo, selectedImage);
+
+            if (uploadError) throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
+
+            const { data: publicUrlData } = supabase.storage
+                .from('lotes-fotos')
+                .getPublicUrl(nomeArquivo);
+
+            const { error: insertError } = await supabase
+                .from('lotes')
+                .insert([{
+                    empresa_id: empresaId,
+                    titulo: lote.titulo,
+                    categoria: lote.categoria,
+                    peso_kg: parseFloat(lote.peso_kg),
+                    cidade: lote.cidade,
+                    estado: lote.estado,
+                    descricao: lote.descricao,
+                    foto_url: publicUrlData.publicUrl,
+                    status: 'disponivel',
+                    created_at: new Date().toISOString()
+                }]);
+
+            if (insertError) throw new Error(`Erro ao criar lote: ${insertError.message}`);
+
+            alert('Lote publicado com sucesso!');
+            setLote({ titulo: '', categoria: 'Monitores', peso_kg: '', cidade: '', estado: '', descricao: '' });
+            setSelectedImage(null);
+            setImagePreview(null);
+            navigate('/marketplace');
+
+        } catch (error) {
+            console.error('Erro:', error);
+            alert(`Erro ao publicar lote: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const iniciais = usuarioData?.nome
+        ? usuarioData.nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+        : '?';
 
     return (
-        <div className="painel-page">
-            <div className="painel-container">
+        <div className="Dashboard-page">
+            <div className="Dashboard-container">
 
-                <div className="painel-header">
+                <div className="Dashboard-header">
                     <h2>Anunciar Novo <span className="text-highlight">Lote</span></h2>
                     <p>Preencha os dados abaixo. A nossa IA utilizará estas informações para sugerir o melhor valor de mercado.</p>
                 </div>
 
-                <form className="painel-form" onSubmit={handleSubmit}>
+                <form className="Dashboard-form" onSubmit={handleSubmit}>
 
-                    {/* Área de Upload de Foto (Simulada) */}
-                    <div className="form-group">
+                    {/* Card do anunciante */}
+                    {usuarioData && (
+                        <div className="anunciante-card">
+                            <div className="anunciante-avatar">{iniciais}</div>
+                            <div className="anunciante-dados">
+                                <span className="anunciante-nome">{usuarioData.nome || 'Usuário'}</span>
+                                <span className="anunciante-detalhe">{usuarioData.email}</span>
+                                {usuarioData.telefone && (
+                                    <span className="anunciante-detalhe">{usuarioData.telefone}</span>
+                                )}
+                            </div>
+                            <span className="anunciante-badge">Anunciante</span>
+                        </div>
+                    )}
+
+                    {/* Upload de foto */}
+                    <div className={`form-group ${!selectedImage ? 'form-group--error' : 'form-group--success'}`}>
                         <label className="form-label">Foto dos Equipamentos</label>
-                        <div className="image-dropzone">
-                            <span className="dropzone-icon">📸</span>
-                            <p>Clique ou arraste uma foto aqui</p>
-                            <span className="dropzone-hint">Formatos suportados: JPG, PNG</span>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileSelect}
+                            accept="image/jpeg,image/png"
+                            style={{ display: 'none' }}
+                            disabled={isSubmitting}
+                        />
+                        <div
+                            className={`image-dropzone ${isDragOver ? 'drag-over' : ''}`}
+                            onClick={handleDropzoneClick}
+                            onDrop={handleDrop}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                        >
+                            {imagePreview ? (
+                                <div className="image-preview">
+                                    <img src={imagePreview} alt="Preview" className="preview-image" />
+                                    <p className="preview-text">Imagem: {selectedImage.name}</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <span className="dropzone-icon">📸</span>
+                                    <p>Clique ou arraste uma foto aqui</p>
+                                    <span className="dropzone-hint">Formatos suportados: JPG, PNG</span>
+                                </>
+                            )}
                         </div>
                     </div>
 
                     <div className="form-row">
-                        <div className="form-group flex-2">
+                        <div className={`form-group flex-2 ${!lote.titulo ? 'form-group--error' : 'form-group--success'}`}>
                             <label className="form-label">Título do Anúncio</label>
                             <input
                                 type="text"
@@ -62,6 +230,7 @@ export default function Painel() {
                                 value={lote.titulo}
                                 onChange={handleInputChange}
                                 required
+                                disabled={isSubmitting}
                             />
                         </div>
 
@@ -72,6 +241,7 @@ export default function Painel() {
                                 className="form-input form-select"
                                 value={lote.categoria}
                                 onChange={handleInputChange}
+                                disabled={isSubmitting}
                             >
                                 <option value="Monitores">Monitores</option>
                                 <option value="Servidores / Placas">Servidores / Placas</option>
@@ -82,34 +252,51 @@ export default function Painel() {
                     </div>
 
                     <div className="form-row">
-                        <div className="form-group flex-1">
-                            <label className="form-label">Peso Estimado</label>
+                        <div className={`form-group flex-1 ${!lote.peso_kg ? 'form-group--error' : 'form-group--success'}`}>
+                            <label className="form-label">Peso Estimado (kg)</label>
                             <input
-                                type="text"
-                                name="peso"
+                                type="number"
+                                name="peso_kg"
                                 className="form-input"
-                                placeholder="Ex: 50kg"
-                                value={lote.peso}
+                                placeholder="Ex: 50"
+                                value={lote.peso_kg}
                                 onChange={handleInputChange}
                                 required
+                                disabled={isSubmitting}
                             />
                         </div>
 
-                        <div className="form-group flex-1">
-                            <label className="form-label">Localização (Cidade, UF)</label>
+                        <div className={`form-group flex-1 ${!lote.cidade ? 'form-group--error' : 'form-group--success'}`}>
+                            <label className="form-label">Cidade</label>
                             <input
                                 type="text"
-                                name="local"
+                                name="cidade"
                                 className="form-input"
-                                placeholder="Ex: Curitiba, PR"
-                                value={lote.local}
+                                placeholder="Ex: Curitiba"
+                                value={lote.cidade}
                                 onChange={handleInputChange}
                                 required
+                                disabled={isSubmitting}
+                            />
+                        </div>
+
+                        <div className={`form-group flex-1 ${!lote.estado ? 'form-group--error' : 'form-group--success'}`}>
+                            <label className="form-label">Estado (UF)</label>
+                            <input
+                                type="text"
+                                name="estado"
+                                className="form-input"
+                                placeholder="Ex: PR"
+                                maxLength="2"
+                                value={lote.estado}
+                                onChange={handleInputChange}
+                                required
+                                disabled={isSubmitting}
                             />
                         </div>
                     </div>
 
-                    <div className="form-group">
+                    <div className={`form-group ${!lote.descricao ? 'form-group--error' : 'form-group--success'}`}>
                         <label className="form-label">Descrição Adicional</label>
                         <textarea
                             name="descricao"
@@ -119,11 +306,16 @@ export default function Painel() {
                             value={lote.descricao}
                             onChange={handleInputChange}
                             required
+                            disabled={isSubmitting}
                         ></textarea>
                     </div>
 
-                    <button type="submit" className="btn-submit">
-                        Publicar Anúncio
+                    <button
+                        type="submit"
+                        className="btn-submit"
+                        disabled={isSubmitting || !lote.titulo || !lote.peso_kg || !lote.cidade || !lote.estado || !lote.descricao || !selectedImage}
+                    >
+                        {isSubmitting ? '⏳ Publicando...' : '✨ Publicar Anúncio'}
                     </button>
 
                 </form>

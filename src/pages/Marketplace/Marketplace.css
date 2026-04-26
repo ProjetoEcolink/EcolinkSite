@@ -15,7 +15,7 @@
 }
 
 .marketplace-header h2 {
-    font-size: 2.8rem; /* Aumentado para maior destaque */
+    font-size: 2.8rem;
     font-weight: 800;
     color: var(--text-main);
     margin-bottom: 0.75rem;
@@ -24,7 +24,7 @@
 
 .marketplace-header p {
     color: var(--text-description);
-    font-size: 1.15rem; /* Leve ajuste para legibilidade */
+    font-size: 1.15rem;
     margin-bottom: 2.5rem;
     max-width: 650px;
     margin-left: auto;
@@ -46,7 +46,7 @@
     padding: 0.6rem 1.5rem;
     border-radius: 999px;
     font-weight: 600;
-    font-size: 0.95rem; /* Ajustado */
+    font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -74,11 +74,12 @@
 .lote-card {
     background-color: var(--bg-secondary);
     border: 1px solid var(--ui-border);
-    border-radius: 20px; /* Bordas mais suaves para combinar com o painel */
+    border-radius: 20px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
 }
 
 .lote-card:hover {
@@ -89,7 +90,7 @@
 
 /* Imagem Placeholder */
 .lote-image-placeholder {
-    height: 200px; /* Leve aumento na altura */
+    height: 200px;
     background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
     display: flex;
     align-items: center;
@@ -117,7 +118,7 @@
     color: var(--text-main);
     padding: 0.35rem 0.85rem;
     border-radius: 8px;
-    font-size: 0.7rem; /* Fonte pequena e densa para badges */
+    font-size: 0.7rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -135,7 +136,7 @@
 }
 
 .lote-titulo {
-    font-size: 1.4rem; /* Título mais imponente */
+    font-size: 1.4rem;
     font-weight: 800;
     color: var(--text-main);
     margin: 0;
@@ -143,7 +144,7 @@
 }
 
 .lote-empresa {
-    font-size: 0.95rem; /* Ajustado */
+    font-size: 0.95rem;
     color: var(--brand-main);
     font-weight: 700;
     margin: 0;
@@ -155,13 +156,13 @@
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-main);
-    background-color: var(--bg-primary); /* Fundo sutil */
+    background-color: var(--bg-primary);
     padding: 0.6rem 0.8rem;
     border-radius: 10px;
 }
 
 .lote-descricao {
-    font-size: 0.95rem; /* Fonte confortável para leitura */
+    font-size: 0.95rem;
     color: var(--text-description);
     line-height: 1.6;
     margin: 0.25rem 0;
@@ -197,6 +198,26 @@
    ========================================= */
 .lote-action {
     padding: 0 1.75rem 1.75rem 1.75rem;
+}
+
+.card-ver-detalhes {
+    display: block;
+    width: 100%;
+    padding: 1.1rem;
+    text-align: center;
+    background-color: transparent;
+    color: var(--text-description);
+    border: 2px solid var(--ui-border);
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.lote-card:hover .card-ver-detalhes {
+    border-color: var(--brand-main);
+    color: var(--brand-main);
+    background-color: rgba(from var(--brand-main) r g b / 0.05);
 }
 
 .btn-revelar {
@@ -285,4 +306,269 @@
     font-size: 1.1rem;
     color: var(--text-description);
     font-weight: 600;
+}
+
+/* =========================================
+   MODAL DE DETALHES DO LOTE
+   ========================================= */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    animation: overlayIn 0.25s ease;
+}
+
+@keyframes overlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal-lote {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 860px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    position: relative;
+    animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.25);
+}
+
+@keyframes modalIn {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Coluna da imagem */
+.modal-imagem {
+    position: relative;
+    min-height: 360px;
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    border-radius: 24px 0 0 24px;
+    overflow: hidden;
+    border-right: 1px solid var(--ui-border);
+}
+
+.modal-imagem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.modal-sem-foto {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    opacity: 0.18;
+    min-height: 360px;
+}
+
+.modal-imagem .categoria-badge {
+    top: 1.25rem;
+    right: 1.25rem;
+    left: auto;
+    position: absolute;
+}
+
+/* Botão fechar */
+.modal-fechar {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.1rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    color: var(--text-description);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.modal-fechar:hover {
+    background-color: var(--ui-border);
+    color: var(--text-main);
+}
+
+/* Conteúdo do modal */
+.modal-conteudo {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    overflow-y: auto;
+}
+
+.modal-topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.modal-titulo {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0 0 0.35rem 0;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.modal-empresa {
+    font-size: 0.95rem;
+    color: var(--brand-main);
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Botão deletar posicionado no modal (sem absolute) */
+.btn-deletar.modal-deletar {
+    position: static;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+/* Grid de detalhes */
+.modal-detalhes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.modal-detalhe {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.detalhe-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-description);
+}
+
+.detalhe-valor {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.detalhe-disponivel {
+    color: #22c55e;
+}
+
+/* Bloco de descrição */
+.modal-descricao-bloco {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.modal-descricao-texto {
+    font-size: 0.95rem;
+    color: var(--text-description);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Bloco de contato */
+.modal-contato-bloco {
+    margin-top: auto;
+}
+
+/* Rodapé com ação destrutiva */
+.modal-rodape {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--ui-border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-deletar-modal {
+    background: none;
+    border: none;
+    color: var(--text-description);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.btn-deletar-modal:hover:not(:disabled) {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.08);
+    opacity: 1;
+}
+
+.btn-deletar-modal:disabled {
+    cursor: not-allowed;
+}
+
+/* Responsivo: empilha em telas menores */
+@media (max-width: 680px) {
+    .modal-lote {
+        grid-template-columns: 1fr;
+        max-height: 95vh;
+        border-radius: 20px;
+    }
+
+    .modal-imagem {
+        min-height: 220px;
+        border-radius: 20px 20px 0 0;
+        border-right: none;
+        border-bottom: 1px solid var(--ui-border);
+    }
+
+    .modal-conteudo {
+        padding: 1.5rem;
+    }
+
+    .modal-detalhes-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .modal-detalhes-grid {
+        grid-template-columns: 1fr;
+    }
 }
