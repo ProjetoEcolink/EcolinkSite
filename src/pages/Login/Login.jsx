@@ -105,6 +105,47 @@ export default function Login() {
         }
     };
 
+    const tryLocalLogin = () => {
+        const emailKey = formData.email.trim().toLowerCase();
+        const storedUserRaw = localStorage.getItem(`ecolink-user-${emailKey}`);
+        const storedPassword = localStorage.getItem(`ecolink-password-${emailKey}`);
+
+        if (!storedUserRaw) {
+            return { ok: false, message: 'Conta não encontrada. Verifique o e-mail ou faça o cadastro.' };
+        }
+
+        const passwordFromUserRecord = (() => {
+            try {
+                const parsed = JSON.parse(storedUserRaw);
+                return parsed?.senha || '';
+            } catch {
+                return '';
+            }
+        })();
+
+        const expectedPassword = storedPassword || passwordFromUserRecord;
+
+        if (!expectedPassword || formData.senha !== expectedPassword) {
+            return { ok: false, message: 'Senha incorreta. Tente novamente.' };
+        }
+
+        try {
+            const parsedUser = JSON.parse(storedUserRaw);
+            const usuarioParaSalvar = {
+                email: parsedUser.email || formData.email.trim(),
+                nome: parsedUser.nome || 'Usuário',
+                perfil: parsedUser.perfil || 'Usuario',
+                documento: parsedUser.documento || '',
+                telefone: parsedUser.telefone || '',
+                senha: expectedPassword,
+            };
+            localStorage.setItem('usuario', JSON.stringify(usuarioParaSalvar));
+            return { ok: true };
+        } catch {
+            return { ok: false, message: 'Não foi possível carregar os dados da conta. Tente novamente.' };
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -117,9 +158,16 @@ export default function Login() {
         localStorage.setItem('pendingAuthEmail', formData.email.trim());
 
         if (error) {
+            const localResult = tryLocalLogin();
+            if (localResult.ok) {
+                setLoading(false);
+                navigate('/home');
+                return;
+            }
+
             setErrorModal({
                 visible: true,
-                message: `Não foi possível entrar: ${error.message}`,
+                message: localResult.message || `Não foi possível entrar: ${error.message}`,
             });
             setLoading(false);
         } else {
