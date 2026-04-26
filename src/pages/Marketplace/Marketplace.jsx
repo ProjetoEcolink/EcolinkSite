@@ -9,6 +9,7 @@ export default function Marketplace() {
     const [loading, setLoading] = useState(true);
     const [deletando, setDeletando] = useState(null);
     const [loteAtivo, setLoteAtivo] = useState(null);
+    const [modalConfirmarDelete, setModalConfirmarDelete] = useState(null); // { id, foto_url }
 
     const categorias = ['Todos', 'Monitores', 'Servidores / Placas', 'Notebooks', 'Misto'];
 
@@ -19,21 +20,24 @@ export default function Marketplace() {
     // Fecha modal com ESC
     useEffect(() => {
         const handleKey = (e) => {
-            if (e.key === 'Escape') setLoteAtivo(null);
+            if (e.key === 'Escape') {
+                if (modalConfirmarDelete) setModalConfirmarDelete(null);
+                else setLoteAtivo(null);
+            }
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, []);
+    }, [modalConfirmarDelete]);
 
     // Trava scroll do body quando modal aberto
     useEffect(() => {
-        if (loteAtivo) {
+        if (loteAtivo || modalConfirmarDelete) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = '';
         }
         return () => { document.body.style.overflow = ''; };
-    }, [loteAtivo]);
+    }, [loteAtivo, modalConfirmarDelete]);
 
     const buscarLotes = async () => {
         setLoading(true);
@@ -70,12 +74,17 @@ export default function Marketplace() {
         setContatosRevelados(prev => ({ ...prev, [id]: true }));
     };
 
-    const deletarLote = async (e, id, foto_url) => {
+    const pedirConfirmacaoDelete = (e, id, foto_url) => {
         e.stopPropagation();
-        const confirmar = window.confirm('Tem certeza que deseja remover este lote da vitrine?');
-        if (!confirmar) return;
+        setModalConfirmarDelete({ id, foto_url });
+    };
 
+    const confirmarDelete = async () => {
+        if (!modalConfirmarDelete) return;
+        const { id, foto_url } = modalConfirmarDelete;
+        setModalConfirmarDelete(null);
         setDeletando(id);
+
         try {
             if (foto_url) {
                 const nomeArquivo = foto_url.split('/').pop();
@@ -95,10 +104,11 @@ export default function Marketplace() {
         }
     };
 
+    const cancelarDelete = () => setModalConfirmarDelete(null);
+
     const abrirModal = (lote) => setLoteAtivo(lote);
     const fecharModal = () => setLoteAtivo(null);
 
-    // Mantém o loteAtivo sincronizado com a lista (ex: após deletar)
     const loteModalAtualizado = loteAtivo
         ? lotes.find(l => l.id === loteAtivo.id) || loteAtivo
         : null;
@@ -152,7 +162,7 @@ export default function Marketplace() {
 
                                 <button
                                     className="btn-deletar"
-                                    onClick={(e) => deletarLote(e, lote.id, lote.foto_url)}
+                                    onClick={(e) => pedirConfirmacaoDelete(e, lote.id, lote.foto_url)}
                                     disabled={deletando === lote.id}
                                     title="Remover lote"
                                 >
@@ -195,7 +205,6 @@ export default function Marketplace() {
                         className="modal-lote"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Botão fechar */}
                         <button className="modal-fechar" onClick={fecharModal} aria-label="Fechar modal">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -203,7 +212,6 @@ export default function Marketplace() {
                             </svg>
                         </button>
 
-                        {/* Coluna da imagem */}
                         <div className="modal-imagem">
                             {loteModalAtualizado.foto_url ? (
                                 <img src={loteModalAtualizado.foto_url} alt={loteModalAtualizado.titulo} />
@@ -213,7 +221,6 @@ export default function Marketplace() {
                             <span className="categoria-badge">{loteModalAtualizado.categoria}</span>
                         </div>
 
-                        {/* Coluna de conteúdo */}
                         <div className="modal-conteudo">
                             <div className="modal-topo">
                                 <div>
@@ -222,7 +229,6 @@ export default function Marketplace() {
                                 </div>
                             </div>
 
-                            {/* Detalhes em grid */}
                             <div className="modal-detalhes-grid">
                                 <div className="modal-detalhe">
                                     <span className="detalhe-label">Peso</span>
@@ -246,7 +252,6 @@ export default function Marketplace() {
                                 </div>
                             </div>
 
-                            {/* Descrição */}
                             {loteModalAtualizado.descricao && (
                                 <div className="modal-descricao-bloco">
                                     <span className="detalhe-label">Descrição</span>
@@ -254,7 +259,6 @@ export default function Marketplace() {
                                 </div>
                             )}
 
-                            {/* Contato — sempre visível no modal */}
                             <div className="modal-contato-bloco">
                                 <div className="contato-revelado">
                                     <p className="contato-nome">👤 {loteModalAtualizado.empresas?.nome}</p>
@@ -274,16 +278,38 @@ export default function Marketplace() {
                                 </div>
                             </div>
 
-                            {/* Ação destrutiva — separada visualmente no rodapé */}
                             <div className="modal-rodape">
                                 <button
                                     className="btn-deletar-modal"
-                                    onClick={(e) => deletarLote(e, loteModalAtualizado.id, loteModalAtualizado.foto_url)}
+                                    onClick={(e) => pedirConfirmacaoDelete(e, loteModalAtualizado.id, loteModalAtualizado.foto_url)}
                                     disabled={deletando === loteModalAtualizado.id}
                                 >
                                     {deletando === loteModalAtualizado.id ? 'Removendo...' : '🗑️ Remover este lote'}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* =========================================
+                MODAL DE CONFIRMAÇÃO DE REMOÇÃO
+            ========================================= */}
+            {modalConfirmarDelete && (
+                <div className="confirmar-delete-backdrop" onClick={cancelarDelete}>
+                    <div className="confirmar-delete-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="confirmar-delete-icon">🗑️</div>
+                        <h3 className="confirmar-delete-titulo">Remover lote?</h3>
+                        <p className="confirmar-delete-texto">
+                            Esta ação é permanente. O lote será removido da vitrine e não poderá ser recuperado.
+                        </p>
+                        <div className="confirmar-delete-botoes">
+                            <button className="confirmar-delete-btn-cancelar" onClick={cancelarDelete}>
+                                Cancelar
+                            </button>
+                            <button className="confirmar-delete-btn-confirmar" onClick={confirmarDelete}>
+                                Remover
+                            </button>
                         </div>
                     </div>
                 </div>

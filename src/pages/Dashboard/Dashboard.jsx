@@ -21,6 +21,7 @@ export default function Dashboard() {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [usuarioData, setUsuarioData] = useState(null);
+    const [mostrarModalSucesso, setMostrarModalSucesso] = useState(false);
 
     useEffect(() => {
         const carregarUsuario = async () => {
@@ -142,11 +143,10 @@ export default function Dashboard() {
 
             if (insertError) throw new Error(`Erro ao criar lote: ${insertError.message}`);
 
-            alert('Lote publicado com sucesso!');
+            setMostrarModalSucesso(true);
             setLote({ titulo: '', categoria: 'Monitores', peso_kg: '', cidade: '', estado: '', descricao: '' });
             setSelectedImage(null);
             setImagePreview(null);
-            navigate('/marketplace');
 
         } catch (error) {
             console.error('Erro:', error);
@@ -161,165 +161,184 @@ export default function Dashboard() {
         : '?';
 
     return (
-        <div className="Dashboard-page">
-            <div className="Dashboard-container">
+        <>
+            <div className="Dashboard-page">
+                <div className="Dashboard-container">
 
-                <div className="Dashboard-header">
-                    <h2>Anunciar Novo <span className="text-highlight">Lote</span></h2>
-                    <p>Preencha os dados abaixo. A nossa IA utilizará estas informações para sugerir o melhor valor de mercado.</p>
-                </div>
+                    <div className="Dashboard-header">
+                        <h2>Anunciar Novo <span className="text-highlight">Lote</span></h2>
+                        <p>Preencha os dados abaixo para cadastrar e publicar seu lote na plataforma.</p>
+                    </div>
 
-                <form className="Dashboard-form" onSubmit={handleSubmit}>
+                    <form className="Dashboard-form" onSubmit={handleSubmit}>
 
-                    {/* Card do anunciante */}
-                    {usuarioData && (
-                        <div className="anunciante-card">
-                            <div className="anunciante-avatar">{iniciais}</div>
-                            <div className="anunciante-dados">
-                                <span className="anunciante-nome">{usuarioData.nome || 'Usuário'}</span>
-                                <span className="anunciante-detalhe">{usuarioData.email}</span>
-                                {usuarioData.telefone && (
-                                    <span className="anunciante-detalhe">{usuarioData.telefone}</span>
+                        {/* Card do anunciante */}
+                        {usuarioData && (
+                            <div className="anunciante-card">
+                                <div className="anunciante-avatar">{iniciais}</div>
+                                <div className="anunciante-dados">
+                                    <span className="anunciante-nome">{usuarioData.nome || 'Usuário'}</span>
+                                    <span className="anunciante-detalhe">{usuarioData.email}</span>
+                                    {usuarioData.telefone && (
+                                        <span className="anunciante-detalhe">{usuarioData.telefone}</span>
+                                    )}
+                                </div>
+                                <span className="anunciante-badge">Anunciante</span>
+                            </div>
+                        )}
+
+                        {/* Upload de foto */}
+                        <div className={`form-group ${!selectedImage ? 'form-group--error' : 'form-group--success'}`}>
+                            <label className="form-label">Foto dos Equipamentos</label>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleFileSelect}
+                                accept="image/jpeg,image/png"
+                                style={{ display: 'none' }}
+                                disabled={isSubmitting}
+                            />
+                            <div
+                                className={`image-dropzone ${isDragOver ? 'drag-over' : ''}`}
+                                onClick={handleDropzoneClick}
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                            >
+                                {imagePreview ? (
+                                    <div className="image-preview">
+                                        <img src={imagePreview} alt="Preview" className="preview-image" />
+                                        <p className="preview-text">Imagem: {selectedImage.name}</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <span className="dropzone-icon">📸</span>
+                                        <p>Clique ou arraste uma foto aqui</p>
+                                        <span className="dropzone-hint">Formatos suportados: JPG, PNG</span>
+                                    </>
                                 )}
                             </div>
-                            <span className="anunciante-badge">Anunciante</span>
                         </div>
-                    )}
 
-                    {/* Upload de foto */}
-                    <div className={`form-group ${!selectedImage ? 'form-group--error' : 'form-group--success'}`}>
-                        <label className="form-label">Foto dos Equipamentos</label>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileSelect}
-                            accept="image/jpeg,image/png"
-                            style={{ display: 'none' }}
-                            disabled={isSubmitting}
-                        />
-                        <div
-                            className={`image-dropzone ${isDragOver ? 'drag-over' : ''}`}
-                            onClick={handleDropzoneClick}
-                            onDrop={handleDrop}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
+                        <div className="form-row">
+                            <div className={`form-group flex-2 ${!lote.titulo ? 'form-group--error' : 'form-group--success'}`}>
+                                <label className="form-label">Título do Anúncio</label>
+                                <input
+                                    type="text"
+                                    name="titulo"
+                                    className="form-input"
+                                    placeholder="Ex: 20 Monitores Dell com defeito"
+                                    value={lote.titulo}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+
+                            <div className="form-group flex-1">
+                                <label className="form-label">Categoria</label>
+                                <select
+                                    name="categoria"
+                                    className="form-input form-select"
+                                    value={lote.categoria}
+                                    onChange={handleInputChange}
+                                    disabled={isSubmitting}
+                                >
+                                    <option value="Monitores">Monitores</option>
+                                    <option value="Servidores / Placas">Servidores / Placas</option>
+                                    <option value="Notebooks">Notebooks</option>
+                                    <option value="Misto">Lote Misto</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="form-row">
+                            <div className={`form-group flex-1 ${!lote.peso_kg ? 'form-group--error' : 'form-group--success'}`}>
+                                <label className="form-label">Peso Estimado (kg)</label>
+                                <input
+                                    type="number"
+                                    name="peso_kg"
+                                    className="form-input"
+                                    placeholder="Ex: 50"
+                                    value={lote.peso_kg}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+
+                            <div className={`form-group flex-1 ${!lote.cidade ? 'form-group--error' : 'form-group--success'}`}>
+                                <label className="form-label">Cidade</label>
+                                <input
+                                    type="text"
+                                    name="cidade"
+                                    className="form-input"
+                                    placeholder="Ex: Curitiba"
+                                    value={lote.cidade}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+
+                            <div className={`form-group flex-1 ${!lote.estado ? 'form-group--error' : 'form-group--success'}`}>
+                                <label className="form-label">Estado (UF)</label>
+                                <input
+                                    type="text"
+                                    name="estado"
+                                    className="form-input"
+                                    placeholder="Ex: PR"
+                                    maxLength="2"
+                                    value={lote.estado}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        <div className={`form-group ${!lote.descricao ? 'form-group--error' : 'form-group--success'}`}>
+                            <label className="form-label">Descrição Adicional</label>
+                            <textarea
+                                name="descricao"
+                                className="form-input form-textarea"
+                                placeholder="Descreva o estado dos equipamentos, se possuem cabos, se há peças em falta, etc."
+                                rows="4"
+                                value={lote.descricao}
+                                onChange={handleInputChange}
+                                required
+                                disabled={isSubmitting}
+                            ></textarea>
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="btn-submit"
+                            disabled={isSubmitting || !lote.titulo || !lote.peso_kg || !lote.cidade || !lote.estado || !lote.descricao || !selectedImage}
                         >
-                            {imagePreview ? (
-                                <div className="image-preview">
-                                    <img src={imagePreview} alt="Preview" className="preview-image" />
-                                    <p className="preview-text">Imagem: {selectedImage.name}</p>
-                                </div>
-                            ) : (
-                                <>
-                                    <span className="dropzone-icon">📸</span>
-                                    <p>Clique ou arraste uma foto aqui</p>
-                                    <span className="dropzone-hint">Formatos suportados: JPG, PNG</span>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                            {isSubmitting ? '⏳ Publicando...' : '✨ Publicar Anúncio'}
+                        </button>
 
-                    <div className="form-row">
-                        <div className={`form-group flex-2 ${!lote.titulo ? 'form-group--error' : 'form-group--success'}`}>
-                            <label className="form-label">Título do Anúncio</label>
-                            <input
-                                type="text"
-                                name="titulo"
-                                className="form-input"
-                                placeholder="Ex: 20 Monitores Dell com defeito"
-                                value={lote.titulo}
-                                onChange={handleInputChange}
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </div>
-
-                        <div className="form-group flex-1">
-                            <label className="form-label">Categoria</label>
-                            <select
-                                name="categoria"
-                                className="form-input form-select"
-                                value={lote.categoria}
-                                onChange={handleInputChange}
-                                disabled={isSubmitting}
-                            >
-                                <option value="Monitores">Monitores</option>
-                                <option value="Servidores / Placas">Servidores / Placas</option>
-                                <option value="Notebooks">Notebooks</option>
-                                <option value="Misto">Lote Misto</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="form-row">
-                        <div className={`form-group flex-1 ${!lote.peso_kg ? 'form-group--error' : 'form-group--success'}`}>
-                            <label className="form-label">Peso Estimado (kg)</label>
-                            <input
-                                type="number"
-                                name="peso_kg"
-                                className="form-input"
-                                placeholder="Ex: 50"
-                                value={lote.peso_kg}
-                                onChange={handleInputChange}
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </div>
-
-                        <div className={`form-group flex-1 ${!lote.cidade ? 'form-group--error' : 'form-group--success'}`}>
-                            <label className="form-label">Cidade</label>
-                            <input
-                                type="text"
-                                name="cidade"
-                                className="form-input"
-                                placeholder="Ex: Curitiba"
-                                value={lote.cidade}
-                                onChange={handleInputChange}
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </div>
-
-                        <div className={`form-group flex-1 ${!lote.estado ? 'form-group--error' : 'form-group--success'}`}>
-                            <label className="form-label">Estado (UF)</label>
-                            <input
-                                type="text"
-                                name="estado"
-                                className="form-input"
-                                placeholder="Ex: PR"
-                                maxLength="2"
-                                value={lote.estado}
-                                onChange={handleInputChange}
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </div>
-                    </div>
-
-                    <div className={`form-group ${!lote.descricao ? 'form-group--error' : 'form-group--success'}`}>
-                        <label className="form-label">Descrição Adicional</label>
-                        <textarea
-                            name="descricao"
-                            className="form-input form-textarea"
-                            placeholder="Descreva o estado dos equipamentos, se possuem cabos, se há peças em falta, etc."
-                            rows="4"
-                            value={lote.descricao}
-                            onChange={handleInputChange}
-                            required
-                            disabled={isSubmitting}
-                        ></textarea>
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="btn-submit"
-                        disabled={isSubmitting || !lote.titulo || !lote.peso_kg || !lote.cidade || !lote.estado || !lote.descricao || !selectedImage}
-                    >
-                        {isSubmitting ? '⏳ Publicando...' : '✨ Publicar Anúncio'}
-                    </button>
-
-                </form>
+                    </form>
+                </div>
             </div>
-        </div>
+
+            {/* --- MODAL DE SUCESSO --- */}
+            {mostrarModalSucesso && (
+                <div className="sucesso-modal-backdrop">
+                    <div className="sucesso-modal-container">
+                        <div className="sucesso-modal-icon">✅</div>
+                        <h3 className="sucesso-modal-titulo">Lote publicado!</h3>
+                        <p className="sucesso-modal-texto">Seu anúncio já está disponível no Marketplace para os recicladores.</p>
+                        <button
+                            className="sucesso-modal-btn"
+                            onClick={() => { setMostrarModalSucesso(false); navigate('/marketplace'); }}
+                        >
+                            Ver no Marketplace
+                        </button>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }

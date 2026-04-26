@@ -447,7 +447,6 @@
     margin: 0;
 }
 
-/* Botão deletar posicionado no modal (sem absolute) */
 .btn-deletar.modal-deletar {
     position: static;
     flex-shrink: 0;
@@ -541,6 +540,101 @@
 
 .btn-deletar-modal:disabled {
     cursor: not-allowed;
+}
+
+/* =========================================
+   MODAL DE CONFIRMAÇÃO DE REMOÇÃO
+   ========================================= */
+.confirmar-delete-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+    backdrop-filter: blur(4px);
+}
+
+.confirmar-delete-container {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 24px;
+    padding: 2.5rem;
+    max-width: 360px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.confirmar-delete-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.confirmar-delete-titulo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.confirmar-delete-texto {
+    font-size: 0.95rem;
+    color: var(--text-description);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.confirmar-delete-botoes {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.confirmar-delete-btn-cancelar {
+    flex: 1;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.confirmar-delete-btn-cancelar:hover {
+    border-color: var(--text-description);
+}
+
+.confirmar-delete-btn-confirmar {
+    flex: 1;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    background-color: #ef4444;
+    border: none;
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.confirmar-delete-btn-confirmar:hover {
+    background-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(239, 68, 68, 0.3);
 }
 
 /* Responsivo: empilha em telas menores */
