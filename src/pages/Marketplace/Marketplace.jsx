@@ -1,43 +1,60 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import { normalizeFotoUrls, TIPOS_MATERIAIS_PADRAO } from '../../utils/loteUtils';
 import './Marketplace.css';
+
+function loteLocalLabel(lote) {
+    if (lote.local_lote) return lote.local_lote;
+    if (lote.cidade || lote.estado) return [lote.cidade, lote.estado].filter(Boolean).join(', ');
+    return 'Local não informado';
+}
 
 export default function Marketplace() {
     const [lotes, setLotes] = useState([]);
     const [categoriaAtiva, setCategoriaAtiva] = useState('Todos');
-    const [contatosRevelados, setContatosRevelados] = useState({});
     const [loading, setLoading] = useState(true);
-    const [deletando, setDeletando] = useState(null);
     const [loteAtivo, setLoteAtivo] = useState(null);
-    const [modalConfirmarDelete, setModalConfirmarDelete] = useState(null); // { id, foto_url }
+    const [empresaLogadaId, setEmpresaLogadaId] = useState(null);
 
-    const categorias = ['Todos', 'Monitores', 'Servidores / Placas', 'Notebooks', 'Misto'];
+    const categorias = useMemo(() => ['Todos', ...TIPOS_MATERIAIS_PADRAO], []);
+
+    useEffect(() => {
+        const userStr = localStorage.getItem('usuario');
+        if (!userStr) return;
+
+        const usuario = JSON.parse(userStr);
+        const buscarEmpresa = async () => {
+            const { data } = await supabase
+                .from('empresas')
+                .select('id')
+                .eq('email', usuario.email)
+                .limit(1);
+
+            if (data?.length) {
+                setEmpresaLogadaId(data[0].id);
+            }
+        };
+
+        buscarEmpresa();
+    }, []);
 
     useEffect(() => {
         buscarLotes();
-    }, [categoriaAtiva]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [categoriaAtiva, empresaLogadaId]);
 
-    // Fecha modal com ESC
     useEffect(() => {
-        const handleKey = (e) => {
-            if (e.key === 'Escape') {
-                if (modalConfirmarDelete) setModalConfirmarDelete(null);
-                else setLoteAtivo(null);
-            }
-        };
+        const handleKey = (e) => e.key === 'Escape' && setLoteAtivo(null);
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [modalConfirmarDelete]);
+    }, []);
 
-    // Trava scroll do body quando modal aberto
     useEffect(() => {
-        if (loteAtivo || modalConfirmarDelete) {
-            document.body.style.overflow = 'hidden';
-        } else {
+        document.body.style.overflow = loteAtivo ? 'hidden' : '';
+        return () => {
             document.body.style.overflow = '';
-        }
-        return () => { document.body.style.overflow = ''; };
-    }, [loteAtivo, modalConfirmarDelete]);
+        };
+    }, [loteAtivo]);
 
     const buscarLotes = async () => {
         setLoading(true);
@@ -47,6 +64,7 @@ export default function Marketplace() {
                 .select(`
                     *,
                     empresas (
+                        id,
                         nome,
                         email,
                         telefone
@@ -56,12 +74,18 @@ export default function Marketplace() {
                 .order('created_at', { ascending: false });
 
             if (categoriaAtiva !== 'Todos') {
-                query = query.eq('categoria', categoriaAtiva);
+                query = query.or(`tipo_material.eq.${categoriaAtiva},categoria.eq.${categoriaAtiva}`);
             }
 
             const { data, error } = await query;
             if (error) throw error;
-            setLotes(data || []);
+
+            const filtrados = (data || []).filter((lote) => {
+                if (!empresaLogadaId) return true;
+                return lote.empresa_id !== empresaLogadaId;
+            });
+
+            setLotes(filtrados);
         } catch (error) {
             console.error('Erro ao buscar lotes:', error.message);
         } finally {
@@ -69,58 +93,17 @@ export default function Marketplace() {
         }
     };
 
-    const revelarContato = (e, id) => {
-        e.stopPropagation();
-        setContatosRevelados(prev => ({ ...prev, [id]: true }));
-    };
-
-    const pedirConfirmacaoDelete = (e, id, foto_url) => {
-        e.stopPropagation();
-        setModalConfirmarDelete({ id, foto_url });
-    };
-
-    const confirmarDelete = async () => {
-        if (!modalConfirmarDelete) return;
-        const { id, foto_url } = modalConfirmarDelete;
-        setModalConfirmarDelete(null);
-        setDeletando(id);
-
-        try {
-            if (foto_url) {
-                const nomeArquivo = foto_url.split('/').pop();
-                await supabase.storage.from('lotes-fotos').remove([nomeArquivo]);
-            }
-
-            const { error } = await supabase.from('lotes').delete().eq('id', id);
-            if (error) throw error;
-
-            setLotes(prev => prev.filter(lote => lote.id !== id));
-            setLoteAtivo(null);
-        } catch (error) {
-            console.error('Erro ao deletar lote:', error.message);
-            alert('Erro ao remover lote: ' + error.message);
-        } finally {
-            setDeletando(null);
-        }
-    };
-
-    const cancelarDelete = () => setModalConfirmarDelete(null);
-
     const abrirModal = (lote) => setLoteAtivo(lote);
     const fecharModal = () => setLoteAtivo(null);
-
-    const loteModalAtualizado = loteAtivo
-        ? lotes.find(l => l.id === loteAtivo.id) || loteAtivo
-        : null;
 
     return (
         <div className="marketplace-page">
             <header className="marketplace-header">
-                <h2>Vitrine de <span className="text-highlight">Lotes Disponíveis</span></h2>
-                <p>Encontre os melhores ativos de TI e negocie direto com o gerador.</p>
+                <h2>Marketplace <span className="text-highlight">EcoLink</span></h2>
+                <p>Explore lotes publicados por outras empresas. Seus próprios anúncios aparecem em Meus Produtos.</p>
 
                 <div className="marketplace-filters">
-                    {categorias.map(cat => (
+                    {categorias.map((cat) => (
                         <button
                             key={cat}
                             className={`filter-btn ${categoriaAtiva === cat ? 'active' : ''}`}
@@ -133,78 +116,59 @@ export default function Marketplace() {
             </header>
 
             {loading ? (
-                <div className="marketplace-status">
-                    <p>Carregando lotes...</p>
-                </div>
+                <div className="marketplace-status"><p>Carregando lotes...</p></div>
             ) : lotes.length === 0 ? (
-                <div className="marketplace-status">
-                    <p>Nenhum lote disponível nessa categoria no momento.</p>
-                </div>
+                <div className="marketplace-status"><p>Nenhum lote disponível nessa categoria no momento.</p></div>
             ) : (
                 <div className="marketplace-grid">
-                    {lotes.map((lote) => (
-                        <article
-                            key={lote.id}
-                            className="lote-card"
-                            onClick={() => abrirModal(lote)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => e.key === 'Enter' && abrirModal(lote)}
-                            aria-label={`Ver detalhes do lote ${lote.titulo}`}
-                        >
-                            <div className="lote-image-placeholder">
-                                {lote.foto_url ? (
-                                    <img src={lote.foto_url} alt={lote.titulo} className="lote-foto" />
-                                ) : (
-                                    <span className="image-icon">📷</span>
-                                )}
-                                <span className="categoria-badge">{lote.categoria}</span>
+                    {lotes.map((lote) => {
+                        const fotoUrls = normalizeFotoUrls(lote);
+                        const fotoPrincipal = fotoUrls[0] || null;
+                        const categoriaLabel = lote.tipo_material || lote.categoria || 'Sem categoria';
 
-                                <button
-                                    className="btn-deletar"
-                                    onClick={(e) => pedirConfirmacaoDelete(e, lote.id, lote.foto_url)}
-                                    disabled={deletando === lote.id}
-                                    title="Remover lote"
-                                >
-                                    {deletando === lote.id ? '...' : '🗑️'}
-                                </button>
-                            </div>
-
-                            <div className="lote-info">
-                                <h3 className="lote-titulo">{lote.titulo}</h3>
-                                <p className="lote-empresa">🏢 {lote.empresas?.nome || 'Empresa Parceira'}</p>
-
-                                <div className="lote-meta">
-                                    <span>⚖️ {lote.peso_kg ? `${lote.peso_kg}kg` : 'Peso N/A'}</span>
-                                    <span>📍 {lote.cidade}, {lote.estado}</span>
+                        return (
+                            <article
+                                key={lote.id}
+                                className="lote-card"
+                                onClick={() => abrirModal(lote)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => e.key === 'Enter' && abrirModal(lote)}
+                                aria-label={`Ver detalhes do lote ${lote.titulo}`}
+                            >
+                                <div className="lote-image-placeholder">
+                                    {fotoPrincipal ? (
+                                        <img src={fotoPrincipal} alt={lote.titulo} className="lote-foto" />
+                                    ) : (
+                                        <span className="image-icon">📷</span>
+                                    )}
+                                    <span className="categoria-badge">{categoriaLabel}</span>
                                 </div>
 
-                                <p className="lote-descricao">{lote.descricao}</p>
-                            </div>
+                                <div className="lote-info">
+                                    <h3 className="lote-titulo">{lote.titulo}</h3>
+                                    <p className="lote-empresa">🏢 {lote.empresas?.nome || 'Empresa parceira'}</p>
 
-                            <div className="lote-action">
-                                <span className="card-ver-detalhes">Ver detalhes →</span>
-                            </div>
-                        </article>
-                    ))}
+                                    <div className="lote-meta">
+                                        <span>⚖️ {lote.peso_kg ? `${lote.peso_kg}kg` : 'Peso N/A'}</span>
+                                        <span>📍 {loteLocalLabel(lote)}</span>
+                                    </div>
+
+                                    <p className="lote-descricao">{lote.descricao_resumida || lote.descricao || 'Sem descrição.'}</p>
+                                </div>
+
+                                <div className="lote-action">
+                                    <span className="card-ver-detalhes">Ver detalhes →</span>
+                                </div>
+                            </article>
+                        );
+                    })}
                 </div>
             )}
 
-            {/* =========================================
-                MODAL DE DETALHES DO LOTE
-            ========================================= */}
-            {loteModalAtualizado && (
-                <div
-                    className="modal-overlay"
-                    onClick={fecharModal}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={`Detalhes do lote ${loteModalAtualizado.titulo}`}
-                >
-                    <div
-                        className="modal-lote"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+            {loteAtivo && (
+                <div className="modal-overlay" onClick={fecharModal} role="dialog" aria-modal="true" aria-label={`Detalhes do lote ${loteAtivo.titulo}`}>
+                    <div className="modal-lote" onClick={(e) => e.stopPropagation()}>
                         <button className="modal-fechar" onClick={fecharModal} aria-label="Fechar modal">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18" />
@@ -213,38 +177,34 @@ export default function Marketplace() {
                         </button>
 
                         <div className="modal-imagem">
-                            {loteModalAtualizado.foto_url ? (
-                                <img src={loteModalAtualizado.foto_url} alt={loteModalAtualizado.titulo} />
+                            {normalizeFotoUrls(loteAtivo)[0] ? (
+                                <img src={normalizeFotoUrls(loteAtivo)[0]} alt={loteAtivo.titulo} />
                             ) : (
                                 <div className="modal-sem-foto">📷</div>
                             )}
-                            <span className="categoria-badge">{loteModalAtualizado.categoria}</span>
+                            <span className="categoria-badge">{loteAtivo.tipo_material || loteAtivo.categoria || 'Sem categoria'}</span>
                         </div>
 
                         <div className="modal-conteudo">
                             <div className="modal-topo">
                                 <div>
-                                    <h2 className="modal-titulo">{loteModalAtualizado.titulo}</h2>
-                                    <p className="modal-empresa">🏢 {loteModalAtualizado.empresas?.nome || 'Empresa Parceira'}</p>
+                                    <h2 className="modal-titulo">{loteAtivo.titulo}</h2>
+                                    <p className="modal-empresa">🏢 {loteAtivo.empresas?.nome || 'Empresa parceira'}</p>
                                 </div>
                             </div>
 
                             <div className="modal-detalhes-grid">
                                 <div className="modal-detalhe">
                                     <span className="detalhe-label">Peso</span>
-                                    <span className="detalhe-valor">
-                                        {loteModalAtualizado.peso_kg ? `${loteModalAtualizado.peso_kg} kg` : 'Não informado'}
-                                    </span>
+                                    <span className="detalhe-valor">{loteAtivo.peso_kg ? `${loteAtivo.peso_kg} kg` : 'Não informado'}</span>
                                 </div>
                                 <div className="modal-detalhe">
                                     <span className="detalhe-label">Localização</span>
-                                    <span className="detalhe-valor">
-                                        {loteModalAtualizado.cidade}, {loteModalAtualizado.estado}
-                                    </span>
+                                    <span className="detalhe-valor">{loteLocalLabel(loteAtivo)}</span>
                                 </div>
                                 <div className="modal-detalhe">
-                                    <span className="detalhe-label">Categoria</span>
-                                    <span className="detalhe-valor">{loteModalAtualizado.categoria}</span>
+                                    <span className="detalhe-label">Material</span>
+                                    <span className="detalhe-valor">{loteAtivo.tipo_material || loteAtivo.categoria || 'Não informado'}</span>
                                 </div>
                                 <div className="modal-detalhe">
                                     <span className="detalhe-label">Status</span>
@@ -252,22 +212,24 @@ export default function Marketplace() {
                                 </div>
                             </div>
 
-                            {loteModalAtualizado.descricao && (
+                            {(loteAtivo.descricao_resumida || loteAtivo.descricao_completa || loteAtivo.descricao) && (
                                 <div className="modal-descricao-bloco">
-                                    <span className="detalhe-label">Descrição</span>
-                                    <p className="modal-descricao-texto">{loteModalAtualizado.descricao}</p>
+                                    <span className="detalhe-label">Descrição resumida</span>
+                                    <p className="modal-descricao-texto">{loteAtivo.descricao_resumida || 'Não informada'}</p>
+                                    <span className="detalhe-label">Descrição completa</span>
+                                    <p className="modal-descricao-texto">{loteAtivo.descricao_completa || loteAtivo.descricao || 'Não informada'}</p>
                                 </div>
                             )}
 
                             <div className="modal-contato-bloco">
                                 <div className="contato-revelado">
-                                    <p className="contato-nome">👤 {loteModalAtualizado.empresas?.nome}</p>
-                                    <p className="contato-dado">📞 {loteModalAtualizado.empresas?.telefone || 'Não informado'}</p>
-                                    <p className="contato-dado">✉️ {loteModalAtualizado.empresas?.email || 'Não informado'}</p>
+                                    <p className="contato-nome">👤 {loteAtivo.empresas?.nome || 'Anunciante'}</p>
+                                    <p className="contato-dado">📞 {loteAtivo.empresas?.telefone || 'Não informado'}</p>
+                                    <p className="contato-dado">✉️ {loteAtivo.empresas?.email || 'Não informado'}</p>
 
-                                    {loteModalAtualizado.empresas?.telefone && (
+                                    {loteAtivo.empresas?.telefone && (
                                         <a
-                                            href={`https://wa.me/55${loteModalAtualizado.empresas.telefone.replace(/\D/g, '')}?text=Olá! Vi seu anúncio no EcoLink: ${loteModalAtualizado.titulo}`}
+                                            href={`https://wa.me/55${loteAtivo.empresas.telefone.replace(/\D/g, '')}?text=Olá! Tenho interesse no lote: ${loteAtivo.titulo}`}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="btn-whatsapp"
@@ -277,39 +239,6 @@ export default function Marketplace() {
                                     )}
                                 </div>
                             </div>
-
-                            <div className="modal-rodape">
-                                <button
-                                    className="btn-deletar-modal"
-                                    onClick={(e) => pedirConfirmacaoDelete(e, loteModalAtualizado.id, loteModalAtualizado.foto_url)}
-                                    disabled={deletando === loteModalAtualizado.id}
-                                >
-                                    {deletando === loteModalAtualizado.id ? 'Removendo...' : '🗑️ Remover este lote'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* =========================================
-                MODAL DE CONFIRMAÇÃO DE REMOÇÃO
-            ========================================= */}
-            {modalConfirmarDelete && (
-                <div className="confirmar-delete-backdrop" onClick={cancelarDelete}>
-                    <div className="confirmar-delete-container" onClick={(e) => e.stopPropagation()}>
-                        <div className="confirmar-delete-icon">🗑️</div>
-                        <h3 className="confirmar-delete-titulo">Remover lote?</h3>
-                        <p className="confirmar-delete-texto">
-                            Esta ação é permanente. O lote será removido da vitrine e não poderá ser recuperado.
-                        </p>
-                        <div className="confirmar-delete-botoes">
-                            <button className="confirmar-delete-btn-cancelar" onClick={cancelarDelete}>
-                                Cancelar
-                            </button>
-                            <button className="confirmar-delete-btn-confirmar" onClick={confirmarDelete}>
-                                Remover
-                            </button>
                         </div>
                     </div>
                 </div>

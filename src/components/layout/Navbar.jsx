@@ -1,10 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
-// ==========================================
-// COMPONENTES DE ÍCONES
-// ==========================================
 function ThemeIcon({ theme }) {
     if (theme === 'light') {
         return (
@@ -13,6 +10,7 @@ function ThemeIcon({ theme }) {
             </svg>
         );
     }
+
     return (
         <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
@@ -59,14 +57,8 @@ const SettingsIcon = () => (
     </svg>
 );
 
-// ==========================================
-// COMPONENTE PRINCIPAL
-// ==========================================
 export default function Navbar() {
-    const [theme, setTheme] = useState(() => {
-        return localStorage.getItem('theme') || document.documentElement.getAttribute('data-theme') || 'dark';
-    });
-    
+    const [theme, setTheme] = useState(() => localStorage.getItem('theme') || document.documentElement.getAttribute('data-theme') || 'dark');
     const [nome, setNome] = useState('');
     const [mostrarTutorial, setMostrarTutorial] = useState(false);
     const [passoTutorial, setPassoTutorial] = useState(0);
@@ -82,36 +74,34 @@ export default function Navbar() {
             alvo: null,
             icone: <WelcomeIcon />,
             titulo: 'Bem-vindo ao EcoLink!',
-            texto: 'Preparamos um tour rápido para te mostrar como usar a plataforma. Vamos lá?'
+            texto: 'Preparamos um tour rápido para te mostrar como usar a plataforma. Vamos lá?',
         },
         {
             alvo: 'tour-marketplace',
             icone: <StoreIcon />,
-            titulo: 'Vitrine de Lotes',
-            texto: 'Aqui no Marketplace você encontra todos os lotes disponíveis e pode filtrar por categorias.'
+            titulo: 'Marketplace',
+            texto: 'Aqui você encontra lotes de outras empresas e pode filtrar por tipo de material.',
         },
         {
-            alvo: 'tour-Dashboard',
+            alvo: 'tour-painel',
             icone: <PackageIcon />,
-            titulo: 'Área de Anúncios',
-            texto: 'Se você é um Gerador, é aqui que você cadastra seus equipamentos e publica para os Recicladores.'
+            titulo: 'Meus Produtos',
+            texto: 'Acompanhe, edite e remova seus próprios lotes na tela de Meus Produtos.',
         },
         {
             alvo: 'tour-perfil-tema',
             icone: <SettingsIcon />,
-            titulo: 'Perfil e Configurações',
-            texto: 'Edite suas informações clicando no seu nome, e use a Lua/Sol para alternar o tema do site!'
-        }
+            titulo: 'Perfil e Tema',
+            texto: 'Edite seu perfil e use o botão de tema para alternar entre claro e escuro.',
+        },
     ];
 
-    // Sincroniza o estado da Navbar com o localStorage
     useEffect(() => {
         const userStr = localStorage.getItem('usuario');
         if (userStr) {
             const user = JSON.parse(userStr);
             setNome(user.nome ? user.nome.split(' ')[0] : 'Usuário');
 
-            // Ativa o tutorial apenas se for um novo login e não tiver sido visto
             const tutorialVisto = localStorage.getItem('ecoLink_tutorial_v2');
             if (!tutorialVisto) {
                 setMostrarTutorial(true);
@@ -120,71 +110,64 @@ export default function Navbar() {
             setNome('');
             setMostrarTutorial(false);
         }
-    }, []);
+    }, [location.pathname]);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    // Lógica de posicionamento do Holofote do Tutorial
     useEffect(() => {
         if (mostrarTutorial && passos[passoTutorial].alvo) {
             const elementoAlvo = document.getElementById(passos[passoTutorial].alvo);
-            
-            if (elementoAlvo) {
-                const rect = elementoAlvo.getBoundingClientRect();
-                
-                setHolofote({
-                    top: rect.top - 6,
-                    left: rect.left - 6,
-                    width: rect.width + 12,
-                    height: rect.height + 12
-                });
+            if (!elementoAlvo) return;
 
-                let leftPos = rect.left + (rect.width / 2) - 150;
-                let seta = 'center';
+            const rect = elementoAlvo.getBoundingClientRect();
+            setHolofote({
+                top: rect.top - 6,
+                left: rect.left - 6,
+                width: rect.width + 12,
+                height: rect.height + 12,
+            });
 
-                if (leftPos < 20) { leftPos = 20; seta = 'left'; }
-                if (leftPos + 300 > window.innerWidth) { leftPos = window.innerWidth - 320; seta = 'right'; }
-
-                setPosicaoBalao({
-                    top: rect.bottom + 15,
-                    left: leftPos,
-                    setaPosition: seta
-                });
+            let leftPos = rect.left + rect.width / 2 - 150;
+            let seta = 'center';
+            if (leftPos < 20) {
+                leftPos = 20;
+                seta = 'left';
             }
+            if (leftPos + 300 > window.innerWidth) {
+                leftPos = window.innerWidth - 320;
+                seta = 'right';
+            }
+
+            setPosicaoBalao({
+                top: rect.bottom + 15,
+                left: leftPos,
+                setaPosition: seta,
+            });
         } else {
             setHolofote(null);
         }
     }, [mostrarTutorial, passoTutorial]);
 
-    const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-
-    const handleLogout = () => {
-        setMostrarModalLogout(true);
-    };
-
-    const confirmarLogout = () => {
-        localStorage.removeItem('usuario');
-        setMostrarModalLogout(false);
-        navigate('/home');
-    };
-
-    const cancelarLogout = () => {
-        setMostrarModalLogout(false);
-    };
+    const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
     const goToSection = (section) => {
         if (location.pathname !== '/home' && location.pathname !== '/') {
             navigate('/home');
             setTimeout(() => {
                 const element = document.getElementById(section);
-                if (element) element.scrollIntoView({ behavior: 'smooth' });
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
             }, 150);
-        } else {
-            const element = document.getElementById(section);
-            if (element) element.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+
+        const element = document.getElementById(section);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
         }
     };
 
@@ -193,15 +176,22 @@ export default function Navbar() {
 
     const avancarTutorial = () => {
         if (passoTutorial < passos.length - 1) {
-            setPassoTutorial(passoTutorial + 1);
-        } else {
-            finalizarTutorial();
+            setPassoTutorial((prev) => prev + 1);
+            return;
         }
+        localStorage.setItem('ecoLink_tutorial_v2', 'true');
+        setMostrarTutorial(false);
     };
 
     const finalizarTutorial = () => {
         localStorage.setItem('ecoLink_tutorial_v2', 'true');
         setMostrarTutorial(false);
+    };
+
+    const confirmarLogout = () => {
+        localStorage.removeItem('usuario');
+        setMostrarModalLogout(false);
+        navigate('/home');
     };
 
     return (
@@ -225,8 +215,11 @@ export default function Navbar() {
                                     <Link id="tour-marketplace" to="/marketplace" className={`nav-link-btn ${isActive('/marketplace') ? 'nav-link-active' : ''}`}>
                                         Marketplace
                                     </Link>
-                                    <Link id="tour-Dashboard" to="/dashboard" className={`nav-link-btn ${isActive('/dashboard') ? 'nav-link-active' : ''}`}>
-                                        Anunciar Lote
+                                    <Link id="tour-painel" to="/meus-produtos" className={`nav-link-btn ${isActive('/meus-produtos') ? 'nav-link-active' : ''}`}>
+                                        Meus Produtos
+                                    </Link>
+                                    <Link id="tour-dashboard" to="/dashboard" className={`nav-link-btn ${isActive('/dashboard') ? 'nav-link-active' : ''}`}>
+                                        Novo Lote
                                     </Link>
                                 </>
                             )}
@@ -235,9 +228,7 @@ export default function Navbar() {
 
                     <div className="nav-actions" id="tour-perfil-tema">
                         {isLogado ? (
-                            <Link to="/profile" className="nav-user-link">
-                                Olá, <span>{nome}</span>
-                            </Link>
+                            <Link to="/profile" className="nav-user-link">Olá, <span>{nome}</span></Link>
                         ) : (
                             <div className="nav-auth-group">
                                 <Link to="/login" className="nav-link-login">Entrar</Link>
@@ -246,12 +237,11 @@ export default function Navbar() {
                         )}
 
                         <div className="nav-utility-group">
-                            <button onClick={toggleTheme} className="theme-toggle-nav" title="Alternar tema">
+                            <button onClick={toggleTheme} className="theme-toggle-nav" title="Alternar tema" aria-label="Alternar tema">
                                 <ThemeIcon theme={theme} />
                             </button>
-
                             {isLogado && (
-                                <button onClick={handleLogout} className="theme-toggle-nav" title="Sair da conta">
+                                <button onClick={() => setMostrarModalLogout(true)} className="theme-toggle-nav" title="Sair da conta" aria-label="Sair da conta">
                                     <LogoutIcon />
                                 </button>
                             )}
@@ -260,30 +250,17 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* --- ESTRUTURA DO TOUR --- */}
             {mostrarTutorial && (
                 <div className={`tour-backdrop ${passos[passoTutorial].alvo ? 'tour-backdrop-transparente' : ''}`}>
                     {holofote && (
-                        <div className="tour-holofote-box" style={{
-                            top: holofote.top,
-                            left: holofote.left,
-                            width: holofote.width,
-                            height: holofote.height
-                        }}></div>
+                        <div className="tour-holofote-box" style={{ top: holofote.top, left: holofote.left, width: holofote.width, height: holofote.height }} />
                     )}
 
-                    <div 
-                        className={`tour-balao ${!passos[passoTutorial].alvo ? 'tour-central' : ''}`}
-                        style={passos[passoTutorial].alvo ? { top: posicaoBalao.top, left: posicaoBalao.left } : {}}
-                    >
-                        {passos[passoTutorial].alvo && (
-                            <div className={`tour-seta seta-${posicaoBalao.setaPosition}`}></div>
-                        )}
+                    <div className={`tour-balao ${!passos[passoTutorial].alvo ? 'tour-central' : ''}`} style={passos[passoTutorial].alvo ? { top: posicaoBalao.top, left: posicaoBalao.left } : {}}>
+                        {passos[passoTutorial].alvo && <div className={`tour-seta seta-${posicaoBalao.setaPosition}`}></div>}
 
                         <div className="tour-content">
-                            <div className="tour-icon" style={{ color: 'var(--brand-main, #10b981)' }}>
-                                {passos[passoTutorial].icone}
-                            </div>
+                            <div className="tour-icon" style={{ color: 'var(--brand-main, #10b981)' }}>{passos[passoTutorial].icone}</div>
                             <div>
                                 <h4 className="tour-title">{passos[passoTutorial].titulo}</h4>
                                 <p className="tour-text">{passos[passoTutorial].texto}</p>
@@ -303,30 +280,16 @@ export default function Navbar() {
                 </div>
             )}
 
-            {/* --- MODAL DE CONFIRMAÇÃO DE LOGOUT --- */}
             {mostrarModalLogout && (
                 <div className="logout-modal-backdrop">
                     <div className="logout-modal-container">
                         <div className="logout-modal-content">
-                            <div className="logout-modal-icon">
-                                <LogoutIcon />
-                            </div>
+                            <div className="logout-modal-icon"><LogoutIcon /></div>
                             <h3 className="logout-modal-titulo">Deseja sair?</h3>
-                            <p className="logout-modal-texto">Você será desconectado e voltará à página inicial. Pode se conectar novamente a qualquer momento.</p>
-                            
+                            <p className="logout-modal-texto">Você será desconectado e voltará à página inicial.</p>
                             <div className="logout-modal-botoes">
-                                <button 
-                                    className="logout-modal-btn-cancelar"
-                                    onClick={cancelarLogout}
-                                >
-                                    Cancelar
-                                </button>
-                                <button 
-                                    className="logout-modal-btn-confirmar"
-                                    onClick={confirmarLogout}
-                                >
-                                    Sair
-                                </button>
+                                <button className="logout-modal-btn-cancelar" onClick={() => setMostrarModalLogout(false)}>Cancelar</button>
+                                <button className="logout-modal-btn-confirmar" onClick={confirmarLogout}>Sair</button>
                             </div>
                         </div>
                     </div>

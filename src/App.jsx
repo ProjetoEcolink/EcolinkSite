@@ -18,6 +18,7 @@ import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import Profile from './pages/Profile/Profile';
 import Marketplace from './pages/Marketplace/Marketplace';
 import Dashboard from './pages/Dashboard/Dashboard'; // CAMINHO CORRIGIDO AQUI
+import MyProducts from './pages/MyProducts/MyProducts';
 
 // Landing Page
 const LandingPage = () => (
@@ -73,6 +74,12 @@ function App() {
                     <Route path="/dashboard" element={
                         <ProtectedRoute>
                             <Dashboard />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/meus-produtos" element={
+                        <ProtectedRoute>
+                            <MyProducts />
                         </ProtectedRoute>
                     } />
                     

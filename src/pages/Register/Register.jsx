@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Register.css';
+import { PASSWORD_MAX_LENGTH, validatePasswordStrength } from '../../utils/passwordPolicy';
 
 const onlyDigits = (value) => value.replace(/\D/g, '');
 const isRepeatedDigits = (value) => /^(\d)\1+$/.test(value);
@@ -115,7 +116,7 @@ const SuccessIcon = () => (
 );
 
 export default function Register() {
-    const [perfil, setPerfil] = useState('pessoa_fisica');
+    const [perfil, setPerfil] = useState('user');
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState('');
     const [campoErro, setCampoErro] = useState('');
@@ -157,7 +158,7 @@ export default function Register() {
         const cleanValue = onlyDigits(value);
 
         if (name === 'documento') {
-            if (perfil === 'pessoa_fisica') {
+            if (perfil === 'user') {
                 return cleanValue
                     .replace(/(\d{3})(\d)/, '$1.$2')
                     .replace(/(\d{3})(\d)/, '$1.$2')
@@ -234,7 +235,7 @@ export default function Register() {
             return;
         }
         if (!formData.documento.trim()) {
-            const docLabel = perfil === 'empresa' ? 'CNPJ' : 'CPF';
+            const docLabel = perfil === 'business' ? 'CNPJ' : 'CPF';
             mostrarErro(`O campo ${docLabel} é obrigatório. Preencha antes de continuar.`, 'documento');
             return;
         }
@@ -270,26 +271,27 @@ export default function Register() {
 
         const documentoLimpo = onlyDigits(formData.documento);
 
-        if (perfil === 'pessoa_fisica' && documentoLimpo.length !== 11) {
+        if (perfil === 'user' && documentoLimpo.length !== 11) {
             mostrarErro('O CPF deve conter exatamente 11 dígitos.', 'documento');
             return;
         }
-        if (perfil === 'empresa' && documentoLimpo.length !== 14) {
+        if (perfil === 'business' && documentoLimpo.length !== 14) {
             mostrarErro('O CNPJ deve conter exatamente 14 dígitos.', 'documento');
             return;
         }
-        if (perfil === 'pessoa_fisica' && !isValidCPF(formData.documento)) {
+        if (perfil === 'user' && !isValidCPF(formData.documento)) {
             mostrarErro('O CPF informado é inválido. Confirme os números e tente novamente.', 'documento');
             return;
         }
-        if (perfil === 'empresa' && !isValidCNPJ(formData.documento)) {
+        if (perfil === 'business' && !isValidCNPJ(formData.documento)) {
             mostrarErro('O CNPJ informado é inválido. Confirme os números e tente novamente.', 'documento');
             return;
         }
 
         // Validações de senha
-        if (formData.senha.length !== 8) {
-            mostrarErro('A Senha deve ter exatamente 8 caracteres.', 'senha');
+        const senhaErro = validatePasswordStrength(formData.senha);
+        if (senhaErro) {
+            mostrarErro(senhaErro, 'senha');
             return;
         }
         if (formData.senha !== formData.confirmarSenha) {
@@ -307,7 +309,7 @@ export default function Register() {
 
         setLoading(true);
 
-        if (perfil === 'empresa') {
+        if (perfil === 'business') {
             const exists = await cnpjExists(formData.documento);
             if (exists === false) {
                 setLoading(false);
@@ -326,7 +328,7 @@ export default function Register() {
                 id: Date.now(),
                 email: formData.email.trim(),
                 nome: formData.nome,
-                perfil: perfil === 'empresa' ? 'Empresa' : 'Pessoa Fisica',
+                perfil: perfil === 'business' ? 'Business' : 'User',
                 documento: documentoLimpo,
                 telefone: formData.telefone,
                 senha: formData.senha,
@@ -379,31 +381,31 @@ export default function Register() {
                 <div className="perfil-toggle">
                     <button
                         type="button"
-                        className={`perfil-toggle-btn ${perfil === 'pessoa_fisica' ? 'active' : ''}`}
-                        onClick={() => handleSelectPerfil('pessoa_fisica')}
+                        className={`perfil-toggle-btn ${perfil === 'user' ? 'active' : ''}`}
+                        onClick={() => handleSelectPerfil('user')}
                     >
-                        Pessoa Física
+                        User
                     </button>
                     <button
                         type="button"
-                        className={`perfil-toggle-btn ${perfil === 'empresa' ? 'active' : ''}`}
-                        onClick={() => handleSelectPerfil('empresa')}
+                        className={`perfil-toggle-btn ${perfil === 'business' ? 'active' : ''}`}
+                        onClick={() => handleSelectPerfil('business')}
                     >
-                        Empresa
+                        Business
                     </button>
                 </div>
 
                 <p className="perfil-desc">
-                    {perfil === 'pessoa_fisica'
-                        ? 'Pessoa física que deseja vender ou destinar equipamentos com segurança.'
-                        : 'Empresa que descarta equipamentos com segurança e compliance ESG.'}
+                    {perfil === 'user'
+                        ? 'Usuário individual que deseja vender ou destinar equipamentos com segurança.'
+                        : 'Conta Business para operações corporativas com foco em compliance ESG.'}
                 </p>
 
                 <form onSubmit={handleSubmit} noValidate>
                     {/* Nome */}
                     <div className="form-group">
                         <label className="form-label">
-                            <span>{perfil === 'empresa' ? 'Razão Social' : 'Nome Completo'}</span>
+                            <span>{perfil === 'business' ? 'Razão Social' : 'Nome Completo'}</span>
                             <span className={`char-count ${formData.nome.length >= 100 ? 'char-count--limit' : ''}`}>
                                 {formData.nome.length}/100
                             </span>
@@ -412,7 +414,7 @@ export default function Register() {
                             type="text"
                             name="nome"
                             className={inputClass('nome')}
-                            placeholder={perfil === 'empresa' ? 'Nome da empresa' : 'Seu nome completo'}
+                            placeholder={perfil === 'business' ? 'Nome da empresa' : 'Seu nome completo'}
                             value={formData.nome}
                             onChange={handleInputChange}
                             maxLength={100}
@@ -423,14 +425,14 @@ export default function Register() {
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">
-                                <span>{perfil === 'empresa' ? 'CNPJ' : 'CPF'}</span>
+                                <span>{perfil === 'business' ? 'CNPJ' : 'CPF'}</span>
                             </label>
                             <input
                                 type="text"
                                 name="documento"
                                 className={inputClass('documento')}
                                 value={formData.documento}
-                                placeholder={perfil === 'empresa' ? '00.000.000/0000-00' : '000.000.000-00'}
+                                placeholder={perfil === 'business' ? '00.000.000/0000-00' : '000.000.000-00'}
                                 onChange={handleInputChange}
                             />
                         </div>
@@ -456,7 +458,7 @@ export default function Register() {
                     {/* Email */}
                     <div className="form-group">
                         <label className="form-label">
-                            <span>{perfil === 'empresa' ? 'E-mail Corporativo' : 'E-mail'}</span>
+                            <span>{perfil === 'business' ? 'E-mail Corporativo' : 'E-mail'}</span>
                             <span className={`char-count ${formData.email.length >= 254 ? 'char-count--limit' : ''}`}>
                                 {formData.email.length}/254
                             </span>
@@ -465,7 +467,7 @@ export default function Register() {
                             type="email"
                             name="email"
                             className={inputClass('email')}
-                            placeholder={perfil === 'empresa' ? 'contato@empresa.com.br' : 'seu@email.com'}
+                            placeholder={perfil === 'business' ? 'contato@empresa.com.br' : 'seu@email.com'}
                             value={formData.email}
                             onChange={handleInputChange}
                             maxLength={254}
@@ -477,8 +479,8 @@ export default function Register() {
                         <div className="form-group">
                             <label className="form-label">
                                 <span>Senha</span>
-                                <span className={`char-count ${formData.senha.length === 8 ? 'char-count--ok' : formData.senha.length > 0 ? 'char-count--warn' : ''}`}>
-                                    {formData.senha.length}/8
+                                <span className={`char-count ${formData.senha.length > 0 && !validatePasswordStrength(formData.senha) ? 'char-count--ok' : formData.senha.length > 0 ? 'char-count--warn' : ''}`}>
+                                    {formData.senha.length}/{PASSWORD_MAX_LENGTH}
                                 </span>
                             </label>
                             <div className="password-input-wrapper">
@@ -486,10 +488,10 @@ export default function Register() {
                                     type={mostrarSenha ? 'text' : 'password'}
                                     name="senha"
                                     className={`${inputClass('senha')} password-input`}
-                                    placeholder="Mín. 8 caracteres"
+                                    placeholder="Min. 8, max. 24, com A-z e 0-9"
                                     value={formData.senha}
                                     onChange={handleInputChange}
-                                    maxLength={8}
+                                    maxLength={PASSWORD_MAX_LENGTH}
                                 />
                                 <button
                                     type="button"
@@ -520,7 +522,7 @@ export default function Register() {
                                     placeholder="Repita a senha"
                                     value={formData.confirmarSenha}
                                     onChange={handleInputChange}
-                                    maxLength={8}
+                                    maxLength={PASSWORD_MAX_LENGTH}
                                 />
                                 <button
                                     type="button"

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
+import { PASSWORD_MAX_LENGTH, validatePasswordStrength } from '../../utils/passwordPolicy';
 
 function ThemeIcon({ theme }) {
     if (theme === 'light') {
@@ -207,8 +208,9 @@ export default function Profile() {
         e.preventDefault();
         setPasswordError('');
 
-        if (passwordData.novaSenha.length < 8) {
-            setPasswordError('A senha deve ter pelo menos 8 caracteres.');
+        const senhaErro = validatePasswordStrength(passwordData.novaSenha);
+        if (senhaErro) {
+            setPasswordError(senhaErro);
             return;
         }
 
@@ -372,8 +374,8 @@ export default function Profile() {
     if (!user) return null;
 
     const getPerfilBadge = () => {
-        if (formData.perfil === 'Empresa') return '🏢 Empresa / Gerador';
-        if (formData.perfil === 'Usuario') return '♻️ Reciclador / Parceiro';
+        if (formData.perfil === 'Business' || formData.perfil === 'Empresa') return '🏢 Business';
+        if (formData.perfil === 'User' || formData.perfil === 'Usuario') return '👤 User';
         return '👤 Usuário';
     };
 
@@ -466,7 +468,7 @@ export default function Profile() {
 
                         {/* CPF/CNPJ — sempre somente leitura */}
                         <div className="form-item">
-                            <label>{formData.perfil === 'Empresa' ? 'CNPJ (Inalterável)' : 'CPF (Inalterável)'}</label>
+                            <label>{formData.perfil === 'Business' || formData.perfil === 'Empresa' ? 'CNPJ (Inalterável)' : 'CPF (Inalterável)'}</label>
                             <input 
                                 type="text" 
                                 disabled={true}
@@ -544,7 +546,7 @@ export default function Profile() {
             {showDeleteModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h3 className="text-white" style={{color: 'var(--red-danger)'}}>Confirma a exclusão?</h3>
+                        <h3 className="text-white" style={{color: 'var(--red-danger)'}}>Você deseja realmente apagar essa conta?</h3>
                         <p className="text-dim">Essa ação não pode ser desfeita. Todos os seus dados serão apagados.</p>
                         <div className="modal-buttons">
                             <button className="btn-cancel" onClick={() => setShowDeleteModal(false)}>
@@ -746,7 +748,7 @@ export default function Profile() {
                                             type="password" 
                                             className="form-input"
                                             placeholder="••••••••"
-                                            maxLength={8}
+                                            maxLength={PASSWORD_MAX_LENGTH}
                                             value={passwordData.senhaAtual}
                                             onChange={(e) => {setPasswordData({...passwordData, senhaAtual: e.target.value}); setPasswordError('');}}
                                             required
@@ -800,7 +802,7 @@ export default function Profile() {
                         {passwordStep === 3 && (
                             <>
                                 <h3 className="text-white" style={{marginBottom: '10px'}}>Nova senha</h3>
-                                <p className="text-dim" style={{marginBottom: '20px'}}>Escolha uma nova senha para sua conta.</p>
+                                <p className="text-dim" style={{marginBottom: '20px'}}>Use de 8 a 24 caracteres com maiúscula, minúscula e número.</p>
                                 <form onSubmit={handlePasswordStep3}>
                                     <div className="form-item" style={{marginBottom: '15px'}}>
                                         <label className="form-label">Nova senha</label>
@@ -809,7 +811,7 @@ export default function Profile() {
                                                 type={showNovaSenhaField ? 'text' : 'password'} 
                                                 className="form-input"
                                                 placeholder="••••••••"
-                                                maxLength={8}
+                                                maxLength={PASSWORD_MAX_LENGTH}
                                                 value={passwordData.novaSenha}
                                                 onChange={(e) => {setPasswordData({...passwordData, novaSenha: e.target.value}); setPasswordError('');}}
                                                 required
@@ -826,7 +828,7 @@ export default function Profile() {
                                                 type={showConfirmarSenhaField ? 'text' : 'password'} 
                                                 className="form-input"
                                                 placeholder="••••••••"
-                                                maxLength={8}
+                                                maxLength={PASSWORD_MAX_LENGTH}
                                                 value={passwordData.confirmarSenha}
                                                 onChange={(e) => {setPasswordData({...passwordData, confirmarSenha: e.target.value}); setPasswordError('');}}
                                                 required
@@ -888,7 +890,7 @@ export default function Profile() {
                                             type="password" 
                                             className="form-input"
                                             placeholder="••••••••"
-                                            maxLength={8}
+                                            maxLength={PASSWORD_MAX_LENGTH}
                                             value={emailData.senhaAtual}
                                             onChange={(e) => {setEmailData({...emailData, senhaAtual: e.target.value}); setEmailError('');}}
                                             required

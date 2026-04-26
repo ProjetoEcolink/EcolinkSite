@@ -258,6 +258,83 @@
     margin: 0.25rem 0 0;
 }
 
+.multi-image-grid {
+    margin-top: 0.9rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.multi-image-item {
+    margin: 0;
+    position: relative;
+    border: 1px solid var(--ui-border);
+    border-radius: 10px;
+    background: var(--bg-primary);
+    padding: 0.35rem;
+    overflow: hidden;
+}
+
+.multi-image-item .preview-image {
+    width: 100%;
+    height: 86px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.multi-image-item .preview-text {
+    margin-top: 0.35rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-remove-image {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    background: rgba(11, 16, 32, 0.85);
+    color: #ef4444;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.local-row {
+    display: flex;
+    gap: 0.7rem;
+    align-items: stretch;
+}
+
+.local-row .form-input {
+    flex: 1;
+}
+
+.btn-localizar {
+    border: 1px solid var(--ui-border);
+    background: var(--bg-primary);
+    color: var(--text-main);
+    border-radius: 10px;
+    padding: 0 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-localizar:hover:not(:disabled) {
+    border-color: var(--brand-main);
+    color: var(--brand-main);
+}
+
+.btn-localizar:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 /* ---- Botão ---- */
 .btn-submit {
     font-family: 'Inter', system-ui, sans-serif;
@@ -368,5 +445,9 @@
     .btn-submit {
         align-self: stretch;
         width: 100%;
+    }
+
+    .local-row {
+        flex-direction: column;
     }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './ForgotPassword.css';
+import { PASSWORD_MAX_LENGTH, validatePasswordStrength } from '../../utils/passwordPolicy';
 
 function ThemeIcon({ theme }) {
     if (theme === 'light') {
@@ -48,6 +49,7 @@ function PasswordInput({ value, onChange, placeholder }) {
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}
+                maxLength={PASSWORD_MAX_LENGTH}
                 required
             />
             <button type="button" className="fp-eye-btn" onClick={() => setShow(!show)} aria-label="Mostrar senha">
@@ -127,8 +129,9 @@ export default function ForgotPassword() {
         e.preventDefault();
         setSenhaErro('');
 
-        if (novaSenha.length < 8) {
-            setSenhaErro('A senha deve ter pelo menos 8 caracteres.');
+        const senhaErro = validatePasswordStrength(novaSenha);
+        if (senhaErro) {
+            setSenhaErro(senhaErro);
             return;
         }
         if (novaSenha !== confirmarSenha) {
@@ -273,7 +276,7 @@ export default function ForgotPassword() {
                                 </svg>
                             </div>
                             <h2>Nova senha</h2>
-                            <p>Escolha uma nova senha para sua conta.</p>
+                            <p>Use entre 8 e 24 caracteres, com letra maiúscula, minúscula e número.</p>
                         </div>
                         <form className="auth-form" onSubmit={handleSenhaSubmit}>
                             <div className="form-group">
