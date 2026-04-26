@@ -111,89 +111,82 @@ export default function Login() {
 
     return (
         <div className="auth-page">
-
-            {/* Cabeçalho Falso Limpo */}
             <header className="auth-topbar">
-                <Link to="/home" style={{ textDecoration: 'none' }}>
-                    <div className="auth-topbar-logo">
-                        Eco<span className="text-eco">Link</span>
-                    </div>
-                </Link>
+                <button
+                    className="auth-back-btn"
+                    onClick={() => navigate('/home')}
+                    title="Voltar"
+                    aria-label="Voltar"
+                    type="button"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                    <span>Voltar</span>
+                </button>
 
                 <button onClick={toggleTheme} aria-label="Mudar tema" type="button" className="auth-theme-toggle">
                     <ThemeIcon theme={theme} />
                 </button>
             </header>
 
-            <button
-                className="auth-back-btn"
-                onClick={() => navigate('/')}
-                title="Voltar para Home"
-                aria-label="Voltar para Home"
-                type="button"
-            >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-                <span>Voltar para Home</span>
-            </button>
+            <main className="auth-content">
+                <Link to="/home" className="auth-brand-link" aria-label="Ir para a home">
+                    <div className="auth-topbar-logo auth-page-logo">
+                        Eco<span className="text-eco">Link</span>
+                    </div>
+                </Link>
 
-            <div className="auth-container">
+                <div className="auth-container">
 
-                <div className="auth-header">
-                    <h2>Bem-vindo</h2>
-                    <p>Acesse o marketplace e gerencie seus resíduos eletrônicos.</p>
+                    <div className="auth-header">
+                        <h2>Bem-vindo</h2>
+                        <p>Acesse o marketplace e gerencie seus resíduos eletrônicos.</p>
+                    </div>
+
+                    <form className="auth-form" onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label className="form-label">E-mail Corporativo</label>
+                            <input
+                                type="email"
+                                name="email"
+                                className="form-input"
+                                placeholder="seu@empresa.com.br"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Senha de Acesso</label>
+                            <input
+                                type="password"
+                                name="senha"
+                                className="form-input"
+                                placeholder="••••••••"
+                                value={formData.senha}
+                                onChange={handleInputChange}
+                                required
+                            />
+                        </div>
+
+                        <div className="auth-forgot-wrap">
+                            <Link to="/esqueci-senha" className="auth-forgot-link">
+                                Esqueceu sua senha?
+                            </Link>
+                        </div>
+
+                        <button type="submit" className="btn-submit" disabled={loading}>
+                            {loading ? 'Autenticando...' : 'Entrar na Plataforma'}
+                        </button>
+
+                        <p className="auth-footer-link">
+                            Ainda não tem uma conta? <Link to={formData.email ? `/register?email=${encodeURIComponent(formData.email.trim())}` : '/register'}>Cadastre-se aqui.</Link>
+                        </p>
+                    </form>
                 </div>
-
-                <form className="auth-form" onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label className="form-label">E-mail Corporativo</label>
-                        <input
-                            type="email"
-                            name="email"
-                            className="form-input"
-                            placeholder="seu@empresa.com.br"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Senha de Acesso</label>
-                        <input
-                            type="password"
-                            name="senha"
-                            className="form-input"
-                            placeholder="••••••••"
-                            value={formData.senha}
-                            onChange={handleInputChange}
-                            required
-                        />
-                    </div>
-
-                    <div style={{ textAlign: 'right', marginTop: '-10px' }}>
-                        <Link to="/esqueci-senha" style={{ color: 'var(--green-eco, #28a745)', textDecoration: 'none', fontSize: '0.85rem' }}>
-                            Esqueceu sua senha?
-                        </Link>
-                    </div>
-
-                    <button type="submit" className="btn-submit" disabled={loading}>
-                        {loading ? 'Autenticando...' : 'Entrar na Plataforma'}
-                    </button>
-
-                    <p className="auth-footer-link" style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-description)', fontSize: '0.9rem' }}>
-                        Ainda não tem uma conta? <Link to={formData.email ? `/register?email=${encodeURIComponent(formData.email.trim())}` : '/register'} style={{ color: 'var(--green-eco)', fontWeight: 'bold', textDecoration: 'none' }}>Cadastre-se aqui.</Link>
-                    </p>
-
-                    <Link to="/home" className="auth-back-link">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M19 12H5M12 19l-7-7 7-7" />
-                        </svg>
-                        Voltar para Home
-                    </Link>
-                </form>
-            </div>
+            </main>
         </div>
     );
 }
