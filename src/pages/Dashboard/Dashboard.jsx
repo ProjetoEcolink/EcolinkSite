@@ -11,6 +11,55 @@ import {
 } from '../../utils/loteUtils';
 import './Dashboard.css';
 
+const ESTADO_BR_POR_NOME = {
+    acre: 'AC',
+    alagoas: 'AL',
+    amapa: 'AP',
+    amazonas: 'AM',
+    bahia: 'BA',
+    ceara: 'CE',
+    'distrito federal': 'DF',
+    espirito santo: 'ES',
+    goias: 'GO',
+    maranhao: 'MA',
+    'mato grosso': 'MT',
+    'mato grosso do sul': 'MS',
+    'minas gerais': 'MG',
+    para: 'PA',
+    paraiba: 'PB',
+    parana: 'PR',
+    pernambuco: 'PE',
+    piaui: 'PI',
+    'rio de janeiro': 'RJ',
+    'rio grande do norte': 'RN',
+    'rio grande do sul': 'RS',
+    rondonia: 'RO',
+    roraima: 'RR',
+    'santa catarina': 'SC',
+    'sao paulo': 'SP',
+    sergipe: 'SE',
+    tocantins: 'TO',
+};
+
+function normalizeEstadoBR(state, stateCode) {
+    const code = String(stateCode || '').trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(code)) {
+        return code;
+    }
+
+    const stateNormalized = String(state || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+    if (ESTADO_BR_POR_NOME[stateNormalized]) {
+        return ESTADO_BR_POR_NOME[stateNormalized];
+    }
+
+    return String(state || '').slice(0, 2).toUpperCase();
+}
+
 async function getOrCreateEmpresaId(usuarioData) {
     const { data: empresaExistente, error: erroBusca } = await supabase
         .from('empresas')
@@ -83,7 +132,9 @@ async function resolveLocationByBrowser() {
     const lat = position.coords.latitude;
     const lon = position.coords.longitude;
 
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+    const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=pt-BR&lat=${lat}&lon=${lon}`,
+    );
     if (!response.ok) {
         throw new Error('Falha ao buscar endereço da localização atual.');
     }
@@ -91,11 +142,15 @@ async function resolveLocationByBrowser() {
     const data = await response.json();
     const address = data.address || {};
     const cidade = address.city || address.town || address.village || address.municipality || '';
-    const estado = address.state_code || address.state || '';
+    const estado = normalizeEstadoBR(address.state, address.state_code);
     const rua = address.road || '';
     const numero = address.house_number || '';
+    const bairro = address.suburb || address.neighbourhood || address.quarter || '';
 
-    const local = [rua, numero, cidade, estado].filter(Boolean).join(', ') || data.display_name || 'Local não identificado';
+    const ruaNumero = [rua, numero].filter(Boolean).join(', ');
+    const cidadeEstado = [cidade, estado].filter(Boolean).join(' - ');
+
+    const local = [ruaNumero, bairro, cidadeEstado].filter(Boolean).join(' | ') || data.display_name || 'Local não identificado';
 
     return {
         local_lote: local,
@@ -331,7 +386,7 @@ export default function Dashboard() {
                 <div className="Dashboard-container">
                     <div className="Dashboard-header">
                         <h2>Anunciar Novo <span className="text-highlight">Lote</span></h2>
-                        <p>Cadastre seu lote com dados completos. O local é preenchido automaticamente via API.</p>
+                        <p>Cadastre seu lote com dados completos. A localização é detectada automaticamente via GPS e API.</p>
                     </div>
 
                     <form className="Dashboard-form" onSubmit={handleSubmit}>
@@ -347,7 +402,13 @@ export default function Dashboard() {
                             </div>
                         )}
 
-                        <div className="form-group">
+                        <section className="form-section">
+                            <div className="form-section-header">
+                                <h3>Fotos do lote</h3>
+                                <p>Envie imagens nítidas para facilitar a avaliação.</p>
+                            </div>
+
+                            <div className="form-group">
                             <label className="form-label">Fotos do lote (máx. {MAX_FOTOS_LOTE})</label>
                             <input
                                 type="file"
@@ -389,141 +450,166 @@ export default function Dashboard() {
                                     ))}
                                 </div>
                             )}
-                        </div>
+                            </div>
+                        </section>
 
-                        <div className="form-row">
-                            <div className="form-group flex-2">
-                                <label className="form-label">Título do anúncio</label>
-                                <input
-                                    type="text"
-                                    name="titulo"
-                                    className="form-input"
-                                    placeholder="Ex: Lote de notebooks para reaproveitamento"
-                                    value={lote.titulo}
-                                    onChange={handleInputChange}
-                                    required
-                                    disabled={isSubmitting}
-                                />
+                        <section className="form-section">
+                            <div className="form-section-header">
+                                <h3>Dados principais</h3>
+                                <p>Defina material, quantidade e dados gerais do lote.</p>
                             </div>
 
-                            <div className="form-group flex-1">
-                                <label className="form-label">Tipo de material</label>
-                                <select
-                                    name="tipo_material"
-                                    className="form-input form-select"
-                                    value={lote.tipo_material}
-                                    onChange={handleInputChange}
-                                    disabled={isSubmitting}
-                                >
-                                    {materialOptions.map((item) => (
-                                        <option key={item} value={item}>{item}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="form-row">
-                            <div className="form-group flex-1">
-                                <label className="form-label">Peso do lote (kg)</label>
-                                <input
-                                    type="text"
-                                    inputMode="decimal"
-                                    name="peso_kg"
-                                    className="form-input"
-                                    placeholder="Ex: 35.5 (opcional)"
-                                    value={lote.peso_kg}
-                                    onChange={handleInputChange}
-                                    disabled={isSubmitting}
-                                />
-                            </div>
-
-                            <div className="form-group flex-1">
-                                <label className="form-label">Quantidade de itens</label>
-                                <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    name="numero_itens"
-                                    className="form-input"
-                                    placeholder="Ex: 120"
-                                    value={lote.numero_itens}
-                                    onChange={handleInputChange}
-                                    required
-                                    disabled={isSubmitting}
-                                />
-                            </div>
-
-                            <div className="form-group flex-2">
-                                <label className="form-label">Local do lote (API)</label>
-                                <div className="local-row">
+                            <div className="form-row">
+                                <div className="form-group flex-2">
+                                    <label className="form-label">Título do anúncio</label>
                                     <input
                                         type="text"
-                                        name="local_lote"
+                                        name="titulo"
                                         className="form-input"
-                                        value={lote.local_lote}
-                                        placeholder="Clique em usar minha localização"
-                                        readOnly
-                                        disabled
+                                        placeholder="Ex: Lote de notebooks para reaproveitamento"
+                                        value={lote.titulo}
+                                        onChange={handleInputChange}
+                                        required
+                                        disabled={isSubmitting}
                                     />
-                                    <button type="button" className="btn-localizar" onClick={preencherLocalizacao} disabled={isLocating || isSubmitting}>
-                                        {isLocating ? 'Buscando...' : 'Usar minha localização'}
-                                    </button>
+                                </div>
+
+                                <div className="form-group flex-1">
+                                    <label className="form-label">Tipo de material</label>
+                                    <select
+                                        name="tipo_material"
+                                        className="form-input form-select"
+                                        value={lote.tipo_material}
+                                        onChange={handleInputChange}
+                                        disabled={isSubmitting}
+                                    >
+                                        {materialOptions.map((item) => (
+                                            <option key={item} value={item}>{item}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="form-row">
-                            <div className="form-group flex-1">
-                                <label className="form-label">Cidade</label>
-                                <input type="text" name="cidade" className="form-input" value={lote.cidade} readOnly disabled />
+                            <div className="form-row">
+                                <div className="form-group flex-1">
+                                    <label className="form-label">Peso do lote (kg)</label>
+                                    <input
+                                        type="text"
+                                        inputMode="decimal"
+                                        name="peso_kg"
+                                        className="form-input"
+                                        placeholder="Ex: 35.5 (opcional)"
+                                        value={lote.peso_kg}
+                                        onChange={handleInputChange}
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
+
+                                <div className="form-group flex-1">
+                                    <label className="form-label">Quantidade de itens</label>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        name="numero_itens"
+                                        className="form-input"
+                                        placeholder="Ex: 120"
+                                        value={lote.numero_itens}
+                                        onChange={handleInputChange}
+                                        required
+                                        disabled={isSubmitting}
+                                    />
+                                </div>
                             </div>
-                            <div className="form-group flex-1">
-                                <label className="form-label">Estado</label>
-                                <input type="text" name="estado" className="form-input" value={lote.estado} readOnly disabled />
+                        </section>
+
+                        <section className="form-section">
+                            <div className="form-section-header">
+                                <h3>Localização</h3>
+                                <p>O endereço é preenchido automaticamente e bloqueado para manter consistência.</p>
                             </div>
-                        </div>
 
-                        <div className="form-group">
-                            <label className="form-label">Materiais no lote (todos)</label>
-                            <textarea
-                                name="materiais_lote"
-                                className="form-input form-textarea"
-                                placeholder="Ex:\nNotebooks Dell\nMonitores Samsung\nCabos HDMI"
-                                rows="4"
-                                value={lote.materiais_lote}
-                                onChange={handleInputChange}
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </div>
+                            <div className="form-row">
+                                <div className="form-group flex-2">
+                                    <label className="form-label">Local do lote (API)</label>
+                                    <div className="local-row">
+                                        <input
+                                            type="text"
+                                            name="local_lote"
+                                            className="form-input"
+                                            value={lote.local_lote}
+                                            placeholder="Clique em usar minha localização"
+                                            readOnly
+                                            disabled
+                                        />
+                                        <button type="button" className="btn-localizar" onClick={preencherLocalizacao} disabled={isLocating || isSubmitting}>
+                                            {isLocating ? 'Buscando...' : 'Usar minha localização'}
+                                        </button>
+                                    </div>
+                                    <span className="form-help">Se a localização estiver desatualizada, toque novamente em "Usar minha localização".</span>
+                                </div>
+                            </div>
 
-                        <div className="form-group">
-                            <label className="form-label">Descrição resumida</label>
-                            <input
-                                type="text"
-                                name="descricao_resumida"
-                                className="form-input"
-                                placeholder="Resumo rápido para card do marketplace"
-                                value={lote.descricao_resumida}
-                                onChange={handleInputChange}
-                                maxLength={180}
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </div>
+                            <div className="form-row">
+                                <div className="form-group flex-1">
+                                    <label className="form-label">Cidade</label>
+                                    <input type="text" name="cidade" className="form-input" value={lote.cidade} readOnly disabled />
+                                </div>
+                                <div className="form-group flex-1">
+                                    <label className="form-label">Estado (UF)</label>
+                                    <input type="text" name="estado" className="form-input" value={lote.estado} readOnly disabled />
+                                </div>
+                            </div>
+                        </section>
 
-                        <div className="form-group">
-                            <label className="form-label">Descrição completa</label>
-                            <textarea
-                                name="descricao_completa"
-                                className="form-input form-textarea"
-                                placeholder="Detalhes técnicos, estado dos itens e observações"
-                                rows="5"
-                                value={lote.descricao_completa}
-                                onChange={handleInputChange}
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </div>
+                        <section className="form-section">
+                            <div className="form-section-header">
+                                <h3>Descrição do lote</h3>
+                                <p>Informe todos os materiais e os detalhes importantes para negociação.</p>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Materiais no lote (todos)</label>
+                                <textarea
+                                    name="materiais_lote"
+                                    className="form-input form-textarea"
+                                    placeholder="Ex:\nNotebooks Dell\nMonitores Samsung\nCabos HDMI"
+                                    rows="4"
+                                    value={lote.materiais_lote}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Descrição resumida</label>
+                                <input
+                                    type="text"
+                                    name="descricao_resumida"
+                                    className="form-input"
+                                    placeholder="Resumo rápido para o card do marketplace"
+                                    value={lote.descricao_resumida}
+                                    onChange={handleInputChange}
+                                    maxLength={180}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Descrição completa</label>
+                                <textarea
+                                    name="descricao_completa"
+                                    className="form-input form-textarea"
+                                    placeholder="Detalhes técnicos, estado dos itens e observações"
+                                    rows="5"
+                                    value={lote.descricao_completa}
+                                    onChange={handleInputChange}
+                                    required
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </section>
 
                         <button type="submit" className="btn-submit" disabled={isSubmitting || !formValid}>
                             {isSubmitting ? 'Publicando...' : 'Publicar lote'}

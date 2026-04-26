@@ -75,6 +75,30 @@
     gap: 1.5rem;
 }
 
+.form-section {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 14px;
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-section-header h3 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.form-section-header p {
+    margin: 0.35rem 0 0;
+    color: var(--text-description);
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
 /* ---- Card do Anunciante ---- */
 .anunciante-card {
     display: flex;
@@ -164,6 +188,12 @@
     font-weight: 700;
     color: var(--text-main);
     letter-spacing: 0.01em;
+}
+
+.form-help {
+    font-size: 0.82rem;
+    color: var(--text-description);
+    line-height: 1.35;
 }
 
 .form-input {
@@ -362,6 +392,37 @@
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+}
+
+@media (max-width: 900px) {
+    .Dashboard-form {
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .Dashboard-header {
+        padding: 1.4rem 1.25rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .local-row {
+        flex-direction: column;
+    }
+
+    .btn-localizar,
+    .btn-submit {
+        width: 100%;
+        min-width: 0;
+        align-self: stretch;
+    }
+
+    .form-input {
+        padding: 0.9rem 1rem;
+    }
 }
 
 /* ---- Modal de Sucesso ---- */
