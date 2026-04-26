@@ -31,11 +31,37 @@ function ThemeIcon({ theme }) {
     );
 }
 
+function ErrorModal({ message, onClose }) {
+    useEffect(() => {
+        const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+        document.addEventListener('keydown', handleKey);
+        return () => document.removeEventListener('keydown', handleKey);
+    }, [onClose]);
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                </div>
+                <h3 className="modal-title">Erro ao entrar</h3>
+                <p className="modal-message">{message}</p>
+                <button className="modal-btn" onClick={onClose}>Tentar novamente</button>
+            </div>
+        </div>
+    );
+}
+
 export default function Login() {
     const navigate = useNavigate();
     const location = useLocation();
     const [formData, setFormData] = useState({ email: '', senha: '' });
     const [loading, setLoading] = useState(false);
+    const [errorModal, setErrorModal] = useState({ visible: false, message: '' });
 
     const [theme, setTheme] = useState(() => {
         return document.documentElement.getAttribute('data-theme') || 'dark';
@@ -91,7 +117,10 @@ export default function Login() {
         localStorage.setItem('pendingAuthEmail', formData.email.trim());
 
         if (error) {
-            alert('Erro ao entrar: ' + error.message);
+            setErrorModal({
+                visible: true,
+                message: `Não foi possível entrar: ${error.message}`,
+            });
             setLoading(false);
         } else {
             const meta = data.user.user_metadata;
@@ -111,6 +140,13 @@ export default function Login() {
 
     return (
         <div className="auth-page">
+            {errorModal.visible && (
+                <ErrorModal
+                    message={errorModal.message}
+                    onClose={() => setErrorModal({ visible: false, message: '' })}
+                />
+            )}
+
             <header className="auth-topbar">
                 <button
                     className="auth-back-btn"

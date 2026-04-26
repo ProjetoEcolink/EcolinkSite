@@ -1,8 +1,8 @@
 /* =========================================
-   PAINEL — EcoLink
+   DASHBOARD — EcoLink
    ========================================= */
 
-.painel-page {
+.Dashboard-page {
     min-height: 100vh;
     background-color: var(--bg-primary);
     font-family: 'Inter', system-ui, sans-serif;
@@ -10,8 +10,7 @@
     transition: background-color 0.3s ease;
 }
 
-/* ---- Container ---- */
-.painel-container {
+.Dashboard-container {
     max-width: 780px;
     width: 90%;
     margin: 0 auto;
@@ -24,14 +23,14 @@
 }
 
 /* ---- Header ---- */
-.painel-header {
+.Dashboard-header {
     padding: 3rem;
     border-bottom: 1px solid var(--ui-border);
     position: relative;
     overflow: hidden;
 }
 
-.painel-header::before {
+.Dashboard-header::before {
     content: '';
     position: absolute;
     top: -50%;
@@ -45,7 +44,7 @@
     pointer-events: none;
 }
 
-.painel-header h2 {
+.Dashboard-header h2 {
     font-size: clamp(1.6rem, 3vw, 2.2rem);
     font-weight: 800;
     letter-spacing: -0.03em;
@@ -59,7 +58,7 @@
     color: var(--brand-main);
 }
 
-.painel-header p {
+.Dashboard-header p {
     color: var(--text-description);
     font-size: 1.05rem;
     line-height: 1.6;
@@ -69,17 +68,87 @@
 }
 
 /* ---- Form ---- */
-.painel-form {
+.Dashboard-form {
     padding: 3rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
+/* ---- Card do Anunciante ---- */
+.anunciante-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 14px;
+    transition: border-color 0.3s ease;
+}
+
+.anunciante-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--brand-main);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+}
+
+.anunciante-dados {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.anunciante-nome {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anunciante-detalhe {
+    font-size: 0.82rem;
+    color: var(--text-description);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anunciante-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--brand-main);
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ---- Form groups ---- */
 .form-group {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.form-group--error .form-label::after {
+    content: ' *';
+    color: #ef4444;
 }
 
 .form-row {
@@ -153,7 +222,8 @@
     text-align: center;
 }
 
-.image-dropzone:hover {
+.image-dropzone:hover,
+.image-dropzone.drag-over {
     border-color: var(--brand-main);
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
@@ -176,12 +246,24 @@
     opacity: 0.6;
 }
 
+.preview-image {
+    max-height: 160px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.preview-text {
+    font-size: 0.85rem;
+    color: var(--text-description);
+    margin: 0.25rem 0 0;
+}
+
 /* ---- Botão ---- */
 .btn-submit {
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 1rem;
     font-weight: 700;
-    color: var(--text-white);
+    color: #fff;
     background-color: var(--brand-main);
     border: none;
     border-radius: 8px;
@@ -200,23 +282,88 @@
 }
 
 .btn-submit:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
+}
+
+/* ---- Modal de Sucesso ---- */
+.sucesso-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.sucesso-modal-container {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 24px;
+    padding: 2.5rem;
+    max-width: 360px;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.sucesso-modal-icon {
+    font-size: 3rem;
+    line-height: 1;
+}
+
+.sucesso-modal-titulo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.sucesso-modal-texto {
+    font-size: 0.95rem;
+    color: var(--text-description);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.sucesso-modal-btn {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    background-color: var(--brand-main);
+    border: none;
+    border-radius: 8px;
+    padding: 0.85rem 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.sucesso-modal-btn:hover {
+    background-color: var(--brand-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
 }
 
 /* ---- Responsivo ---- */
 @media (max-width: 1024px) {
-    .painel-header {
-        padding: 2rem;
-    }
+    .Dashboard-header { padding: 2rem; }
+    .Dashboard-form { padding: 2rem; }
 
-    .painel-form {
-        padding: 2rem;
-    }
+    .form-row { flex-direction: column; }
 
-    .form-row {
-        flex-direction: column;
-    }
+    .anunciante-card { flex-wrap: wrap; }
+    .anunciante-badge { margin-left: auto; }
 
     .btn-submit {
         align-self: stretch;

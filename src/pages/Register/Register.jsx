@@ -1,6 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../../supabaseClient';
 import './Register.css';
 
 const onlyDigits = (value) => value.replace(/\D/g, '');
@@ -57,7 +56,6 @@ async function cnpjExists(value) {
             signal: controller.signal,
         });
         if (!response.ok) return false;
-
         const data = await response.json();
         return !!data?.cnpj;
     } catch {
@@ -71,26 +69,16 @@ function ThemeIcon({ theme }) {
     if (theme === 'light') {
         return (
             <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                    d="M20.354 15.354A9 9 0 1 1 8.646 3.646a7 7 0 0 0 11.708 11.708Z"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
+                <path d="M20.354 15.354A9 9 0 1 1 8.646 3.646a7 7 0 0 0 11.708 11.708Z"
+                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
         );
     }
-
     return (
         <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
-            <path
-                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-            />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
     );
 }
@@ -109,14 +97,34 @@ const EyeClosed = () => (
     </svg>
 );
 
+// Ícone de erro para o modal
+const ErrorIcon = () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+);
+
+// Ícone de sucesso para o modal
+const SuccessIcon = () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="9 12 11 14 15 10" />
+    </svg>
+);
+
 export default function Register() {
     const [perfil, setPerfil] = useState('pessoa_fisica');
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState('');
+    const [campoErro, setCampoErro] = useState('');
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
 
-    // Apenas UM estado para controlar as duas senhas
     const [mostrarSenha, setMostrarSenha] = useState(false);
+    const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
 
     const [formData, setFormData] = useState({
         nome: '', email: '', senha: '', confirmarSenha: '', documento: '', telefone: ''
@@ -156,7 +164,6 @@ export default function Register() {
                     .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
                     .substring(0, 14);
             }
-
             return cleanValue
                 .replace(/^(\d{2})(\d)/, '$1.$2')
                 .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
@@ -178,6 +185,7 @@ export default function Register() {
     const handleInputChange = (e) => {
         let { name, value } = e.target;
         setErro('');
+        setCampoErro('');
 
         if (name === 'documento' || name === 'telefone') {
             value = applyMask(value, name);
@@ -195,103 +203,151 @@ export default function Register() {
         setFormData(prev => ({ ...prev, documento: '' }));
     };
 
+    const mostrarErro = (mensagem, campo = '') => {
+        setErro(mensagem);
+        setCampoErro(campo);
+        setShowErrorModal(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setErro('');
+        setCampoErro('');
+        setShowErrorModal(false);
+
+        // Validações de campos obrigatórios
+        if (!formData.nome.trim()) {
+            mostrarErro('O campo Nome é obrigatório. Preencha antes de continuar.', 'nome');
+            return;
+        }
+        if (!formData.email.trim()) {
+            mostrarErro('O campo E-mail é obrigatório. Preencha antes de continuar.', 'email');
+            return;
+        }
+        if (!formData.telefone.trim()) {
+            mostrarErro('O campo Telefone é obrigatório. Preencha antes de continuar.', 'telefone');
+            return;
+        }
+        const telefoneLimpoCheck = onlyDigits(formData.telefone);
+        if (telefoneLimpoCheck.length !== 11) {
+            mostrarErro('O Telefone deve ter exatamente 11 dígitos: 2 do DDD + 9 do número. Ex: (41) 99999-9999', 'telefone');
+            return;
+        }
+        if (!formData.documento.trim()) {
+            const docLabel = perfil === 'empresa' ? 'CNPJ' : 'CPF';
+            mostrarErro(`O campo ${docLabel} é obrigatório. Preencha antes de continuar.`, 'documento');
+            return;
+        }
+        if (!formData.senha) {
+            mostrarErro('O campo Senha é obrigatório. Preencha antes de continuar.', 'senha');
+            return;
+        }
+        if (!formData.confirmarSenha) {
+            mostrarErro('O campo Confirmar Senha é obrigatório. Preencha antes de continuar.', 'confirmarSenha');
+            return;
+        }
+
+        // Validações de limites
+        if (formData.nome.trim().length < 2) {
+            mostrarErro('O Nome deve ter pelo menos 2 caracteres.', 'nome');
+            return;
+        }
+        if (formData.nome.trim().length > 100) {
+            mostrarErro('O Nome deve ter no máximo 100 caracteres.', 'nome');
+            return;
+        }
+
+        // Validação de email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email.trim())) {
+            mostrarErro('O E-mail informado não tem um formato válido. Ex: usuario@email.com', 'email');
+            return;
+        }
+        if (formData.email.trim().length > 254) {
+            mostrarErro('O E-mail deve ter no máximo 254 caracteres.', 'email');
+            return;
+        }
 
         const documentoLimpo = onlyDigits(formData.documento);
 
         if (perfil === 'pessoa_fisica' && documentoLimpo.length !== 11) {
-            setErro('CPF deve conter 11 numeros.');
+            mostrarErro('O CPF deve conter exatamente 11 dígitos.', 'documento');
             return;
         }
-
         if (perfil === 'empresa' && documentoLimpo.length !== 14) {
-            setErro('CNPJ deve conter 14 numeros.');
+            mostrarErro('O CNPJ deve conter exatamente 14 dígitos.', 'documento');
             return;
         }
-
         if (perfil === 'pessoa_fisica' && !isValidCPF(formData.documento)) {
-            setErro('CPF invalido. Confira os numeros informados.');
+            mostrarErro('O CPF informado é inválido. Confirme os números e tente novamente.', 'documento');
             return;
         }
-
         if (perfil === 'empresa' && !isValidCNPJ(formData.documento)) {
-            setErro('CNPJ invalido. Confira os numeros informados.');
+            mostrarErro('O CNPJ informado é inválido. Confirme os números e tente novamente.', 'documento');
             return;
         }
 
+        // Validações de senha
+        if (formData.senha.length !== 8) {
+            mostrarErro('A Senha deve ter exatamente 8 caracteres.', 'senha');
+            return;
+        }
         if (formData.senha !== formData.confirmarSenha) {
-            setErro('As senhas nao coincidem.');
+            mostrarErro('A Senha e a Confirmação não coincidem. Verifique e tente novamente.', 'confirmarSenha');
             return;
         }
 
-        if (formData.senha.length < 6) {
-            setErro('A senha deve ter pelo menos 6 caracteres.');
+        // Verificar se email já existe
+        const emailKey = formData.email.trim().toLowerCase();
+        const existingUser = localStorage.getItem(`ecolink-user-${emailKey}`);
+        if (existingUser) {
+            mostrarErro('Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.', 'email');
             return;
         }
 
         setLoading(true);
-        const emailRedirectTo = import.meta.env.VITE_AUTH_REDIRECT_URL || `${window.location.origin}/login`;
 
         if (perfil === 'empresa') {
             const exists = await cnpjExists(formData.documento);
             if (exists === false) {
                 setLoading(false);
-                setErro('CNPJ nao encontrado na base publica da Receita.');
+                mostrarErro('CNPJ não encontrado na base pública da Receita Federal. Verifique o número informado.', 'documento');
                 return;
             }
             if (exists === null) {
                 setLoading(false);
-                setErro('Nao foi possivel validar o CNPJ online agora. Tente novamente.');
+                mostrarErro('Não foi possível validar o CNPJ online agora. Verifique sua conexão e tente novamente.', 'documento');
                 return;
             }
         }
 
-        const { data, error } = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.senha,
-            options: {
-                emailRedirectTo,
-                data: {
-                    nome: formData.nome,
-                    perfil: perfil === 'empresa' ? 'Empresa' : 'Pessoa Fisica',
-                    documento: documentoLimpo,
-                    telefone: formData.telefone
-                }
-            }
-        });
-
-        setLoading(false);
-
-        if (error) {
-            if (error.message?.toLowerCase().includes('error sending confirmation email')) {
-                setErro('Falha no envio do email de confirmacao. Para testes internos, desative "Confirm email" em Authentication > Sign In / Providers > Email no Supabase.');
-            } else {
-                setErro(error.message);
-            }
-            return;
-        }
-
-        if (data?.session && data?.user) {
-            const meta = data.user.user_metadata || {};
+        try {
             const usuarioParaSalvar = {
-                email: data.user.email,
-                nome: meta.nome || formData.nome || 'Usuario',
-                perfil: meta.perfil || (perfil === 'empresa' ? 'Empresa' : 'Pessoa Fisica'),
-                documento: meta.documento || documentoLimpo || '',
-                telefone: meta.telefone || formData.telefone || ''
+                id: Date.now(),
+                email: formData.email.trim(),
+                nome: formData.nome,
+                perfil: perfil === 'empresa' ? 'Empresa' : 'Pessoa Fisica',
+                documento: documentoLimpo,
+                telefone: formData.telefone,
+                senha: formData.senha,
+                is_active: true
             };
 
+            localStorage.setItem(`ecolink-user-${emailKey}`, JSON.stringify(usuarioParaSalvar));
+            localStorage.setItem(`ecolink-password-${emailKey}`, formData.senha);
+            localStorage.setItem('pendingAuthEmail', formData.email.trim());
             localStorage.setItem('usuario', JSON.stringify(usuarioParaSalvar));
-            alert('Cadastro realizado com sucesso!');
-            navigate('/home');
-            return;
-        }
 
-        alert('Cadastro realizado! Verifique seu email para confirmar a conta.');
-        navigate('/login');
+            setLoading(false);
+            setShowSuccessModal(true);
+        } catch (err) {
+            mostrarErro('Erro inesperado. Tente novamente.');
+            setLoading(false);
+        }
     };
+
+    // Verifica se um campo está com erro para aplicar borda vermelha
+    const inputClass = (campo) => `form-input${campoErro === campo ? ' input-error' : ''}`;
 
     return (
         <div className="auth-page">
@@ -326,7 +382,7 @@ export default function Register() {
                         className={`perfil-toggle-btn ${perfil === 'pessoa_fisica' ? 'active' : ''}`}
                         onClick={() => handleSelectPerfil('pessoa_fisica')}
                     >
-                        Pessoa Fisica
+                        Pessoa Física
                     </button>
                     <button
                         type="button"
@@ -339,135 +395,202 @@ export default function Register() {
 
                 <p className="perfil-desc">
                     {perfil === 'pessoa_fisica'
-                        ? 'Pessoa fisica que deseja vender ou destinar equipamentos com seguranca.'
-                        : 'Empresa que descarta equipamentos com seguranca e compliance ESG.'}
+                        ? 'Pessoa física que deseja vender ou destinar equipamentos com segurança.'
+                        : 'Empresa que descarta equipamentos com segurança e compliance ESG.'}
                 </p>
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
+                    {/* Nome */}
                     <div className="form-group">
                         <label className="form-label">
-                            {perfil === 'empresa' ? 'Razao Social' : 'Nome Completo'}
+                            <span>{perfil === 'empresa' ? 'Razão Social' : 'Nome Completo'}</span>
+                            <span className={`char-count ${formData.nome.length >= 100 ? 'char-count--limit' : ''}`}>
+                                {formData.nome.length}/100
+                            </span>
                         </label>
                         <input
                             type="text"
                             name="nome"
-                            className="form-input"
+                            className={inputClass('nome')}
                             placeholder={perfil === 'empresa' ? 'Nome da empresa' : 'Seu nome completo'}
                             value={formData.nome}
                             onChange={handleInputChange}
-                            required
+                            maxLength={100}
                         />
                     </div>
 
+                    {/* CPF/CNPJ + Telefone */}
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">
-                                {perfil === 'empresa' ? 'CNPJ' : 'CPF'}
+                                <span>{perfil === 'empresa' ? 'CNPJ' : 'CPF'}</span>
                             </label>
                             <input
                                 type="text"
                                 name="documento"
-                                className="form-input"
+                                className={inputClass('documento')}
                                 value={formData.documento}
                                 placeholder={perfil === 'empresa' ? '00.000.000/0000-00' : '000.000.000-00'}
                                 onChange={handleInputChange}
-                                required
                             />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Telefone</label>
+                            <label className="form-label">
+                                <span>Telefone</span>
+                                <span className={`char-count ${onlyDigits(formData.telefone).length === 0 ? '' : onlyDigits(formData.telefone).length < 11 ? 'char-count--warn' : 'char-count--ok'}`}>
+                                    {onlyDigits(formData.telefone).length}/11
+                                </span>
+                            </label>
                             <input
                                 type="text"
                                 name="telefone"
-                                className="form-input"
+                                className={inputClass('telefone')}
                                 value={formData.telefone}
                                 placeholder="(00) 00000-0000"
                                 onChange={handleInputChange}
-                                required
+                                maxLength={15}
                             />
                         </div>
                     </div>
 
+                    {/* Email */}
                     <div className="form-group">
                         <label className="form-label">
-                            {perfil === 'empresa' ? 'E-mail Corporativo' : 'E-mail'}
+                            <span>{perfil === 'empresa' ? 'E-mail Corporativo' : 'E-mail'}</span>
+                            <span className={`char-count ${formData.email.length >= 254 ? 'char-count--limit' : ''}`}>
+                                {formData.email.length}/254
+                            </span>
                         </label>
                         <input
                             type="email"
                             name="email"
-                            className="form-input"
+                            className={inputClass('email')}
                             placeholder={perfil === 'empresa' ? 'contato@empresa.com.br' : 'seu@email.com'}
                             value={formData.email}
                             onChange={handleInputChange}
-                            required
+                            maxLength={254}
                         />
                     </div>
 
+                    {/* Senhas */}
                     <div className="auth-row-inputs">
                         <div className="form-group">
-                            <label className="form-label">Senha</label>
-
+                            <label className="form-label">
+                                <span>Senha</span>
+                                <span className={`char-count ${formData.senha.length === 8 ? 'char-count--ok' : formData.senha.length > 0 ? 'char-count--warn' : ''}`}>
+                                    {formData.senha.length}/8
+                                </span>
+                            </label>
                             <div className="password-input-wrapper">
                                 <input
-                                    type={mostrarSenha ? "text" : "password"}
+                                    type={mostrarSenha ? 'text' : 'password'}
                                     name="senha"
-                                    className="form-input password-input"
-                                    placeholder="********"
+                                    className={`${inputClass('senha')} password-input`}
+                                    placeholder="Mín. 8 caracteres"
                                     value={formData.senha}
                                     onChange={handleInputChange}
-                                    required
+                                    maxLength={8}
                                 />
                                 <button
                                     type="button"
                                     className="password-toggle-btn"
                                     onClick={() => setMostrarSenha(!mostrarSenha)}
                                     tabIndex="-1"
+                                    aria-label="Mostrar senha"
                                 >
                                     {mostrarSenha ? <EyeOpen /> : <EyeClosed />}
                                 </button>
                             </div>
-
                         </div>
+
                         <div className="form-group">
-                            <label className="form-label">Confirmar</label>
-
-                            {/* O input de confirmar senha agora usa apenas as classes básicas e escuta o estado 'mostrarSenha' */}
-                            <input
-                                type={mostrarSenha ? "text" : "password"}
-                                name="confirmarSenha"
-                                className="form-input"
-                                placeholder="********"
-                                value={formData.confirmarSenha}
-                                onChange={handleInputChange}
-                                required
-                            />
-
+                            <label className="form-label">
+                                <span>Confirmar</span>
+                                {formData.confirmarSenha.length > 0 && (
+                                    <span className={`char-count ${formData.confirmarSenha === formData.senha ? 'char-count--ok' : 'char-count--warn'}`}>
+                                        {formData.confirmarSenha === formData.senha ? '✓ coincidem' : '✗ diferente'}
+                                    </span>
+                                )}
+                            </label>
+                            <div className="password-input-wrapper">
+                                <input
+                                    type={mostrarConfirmar ? 'text' : 'password'}
+                                    name="confirmarSenha"
+                                    className={`${inputClass('confirmarSenha')} password-input`}
+                                    placeholder="Repita a senha"
+                                    value={formData.confirmarSenha}
+                                    onChange={handleInputChange}
+                                    maxLength={8}
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle-btn"
+                                    onClick={() => setMostrarConfirmar(!mostrarConfirmar)}
+                                    tabIndex="-1"
+                                    aria-label="Mostrar confirmação de senha"
+                                >
+                                    {mostrarConfirmar ? <EyeOpen /> : <EyeClosed />}
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    {erro && (
-                        <div style={{
-                            background: 'rgba(255, 80, 80, 0.1)',
-                            border: '1px solid rgba(255, 80, 80, 0.4)',
-                            borderRadius: '10px',
-                            padding: '10px 14px',
-                            color: '#ff6b6b',
-                            fontSize: '0.85rem',
-                            marginBottom: '10px'
-                        }}>
-                            {erro}
-                        </div>
-                    )}
 
                     <button type="submit" className="btn-submit" disabled={loading}>
                         {loading ? 'Criando conta...' : 'Cadastrar agora'}
                     </button>
 
                     <p className="auth-footer-link">
-                        Ja tem conta? <Link to={formData.email ? `/login?email=${encodeURIComponent(formData.email.trim())}` : '/login'}>Entrar</Link>
+                        Já tem conta?{' '}
+                        <Link to={formData.email ? `/login?email=${encodeURIComponent(formData.email.trim())}` : '/login'}>
+                            Entrar
+                        </Link>
                     </p>
                 </form>
             </div>
+
+            {/* Modal de Erro */}
+            {showErrorModal && (
+                <div className="auth-modal-overlay" onClick={() => setShowErrorModal(false)}>
+                    <div className="auth-modal auth-modal--error" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-icon modal-icon--error">
+                            <ErrorIcon />
+                        </div>
+                        <h3>Atenção</h3>
+                        <p className="modal-desc">{erro}</p>
+                        <div className="modal-actions-stack">
+                            <button
+                                className="btn-confirm"
+                                onClick={() => setShowErrorModal(false)}
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Sucesso */}
+            {showSuccessModal && (
+                <div className="auth-modal-overlay">
+                    <div className="auth-modal auth-modal--success">
+                        <div className="modal-icon modal-icon--success">
+                            <SuccessIcon />
+                        </div>
+                        <h3>Cadastro realizado!</h3>
+                        <p className="modal-desc modal-desc--success">
+                            Sua conta foi criada com sucesso. Clique abaixo para acessar o sistema.
+                        </p>
+                        <div className="modal-actions-stack">
+                            <button
+                                className="btn-confirm"
+                                onClick={() => navigate('/login')}
+                            >
+                                Ir para o login
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

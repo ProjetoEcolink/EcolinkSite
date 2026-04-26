@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { supabase } from './supabaseClient';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -15,31 +14,32 @@ import AboutSection from './sections/AboutSection/AboutSection';
 // Páginas
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
+import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import Profile from './pages/Profile/Profile';
 import Marketplace from './pages/Marketplace/Marketplace';
-import Painel from './pages/Painel/Painel';
-import Cadastro from './pages/Cadastro/Cadastro';
+import Dashboard from './pages/Dashboard/Dashboard'; // CAMINHO CORRIGIDO AQUI
 
 // Landing Page
 const LandingPage = () => (
-  <>
-    <section id="home"><HeroSection /></section>
-    <section id="o-problema"><ProblemSection /></section>
-    <section id="funcionalidades"><FeaturesSection /></section>
-    <section id="quem-somos"><AboutSection /></section>
-  </>
+    <>
+        <section id="home"><HeroSection /></section>
+        <section id="o-problema"><ProblemSection /></section>
+        <section id="funcionalidades"><FeaturesSection /></section>
+        <section id="quem-somos"><AboutSection /></section>
+    </>
 );
 
 // Rota protegida — redireciona pro login se não logado
-const ProtectedRoute = ({ session, children }) => {
-    if (session === null) return null; // ainda carregando
-    if (!session) return <Navigate to="/login" replace />;
+const ProtectedRoute = ({ children }) => {
+    const isLoggedIn = !!localStorage.getItem('usuario');
+    if (!isLoggedIn) return <Navigate to="/login" replace />;
     return children;
 };
 
+// Gerencia a exibição da Navbar/Footer
 const LayoutHandler = ({ children }) => {
     const location = useLocation();
-    const hideLayout = ['/login', '/register'].includes(location.pathname); // ← removido '/'
+    const hideLayout = ['/login', '/register', '/esqueci-senha'].includes(location.pathname);
 
     return (
         <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -53,41 +53,34 @@ const LayoutHandler = ({ children }) => {
 };
 
 function App() {
-    const [session, setSession] = useState(null);
-
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session || false);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session || false);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
     return (
         <BrowserRouter>
             <LayoutHandler>
                 <Routes>
-                    {/* Raiz — Landing Page pública para todos */}
+                    {/* Raiz e Home */}
                     <Route path="/" element={<LandingPage />} />
-
-                    {/* /home também mostra a Landing Page */}
                     <Route path="/home" element={<LandingPage />} />
 
-                    {/* Auth — sem navbar */}
-                    <Route path="/login"    element={<Login />} />
+                    {/* Auth */}
+                    <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/esqueci-senha" element={<ForgotPassword />} />
 
-                    {/* App — com navbar, público */}
+                    {/* Público */}
                     <Route path="/marketplace" element={<Marketplace />} />
 
-                    {/* App — com navbar, protegido */}
-                    <Route path="/painel"   element={<ProtectedRoute session={session}><Painel /></ProtectedRoute>} />
-                    <Route path="/cadastro" element={<ProtectedRoute session={session}><Cadastro /></ProtectedRoute>} />
-                    <Route path="/profile"  element={<ProtectedRoute session={session}><Profile /></ProtectedRoute>} />
+                    {/* Protegido (Só acessa se logado) */}
+                    <Route path="/dashboard" element={
+                        <ProtectedRoute>
+                            <Dashboard />
+                        </ProtectedRoute>
+                    } />
+                    
+                    <Route path="/profile" element={
+                        <ProtectedRoute>
+                            <Profile />
+                        </ProtectedRoute>
+                    } />
 
                     {/* 404 */}
                     <Route path="*" element={

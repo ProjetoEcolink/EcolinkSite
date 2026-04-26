@@ -1,10 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '../../supabaseClient';
 import './Navbar.css';
 
 // ==========================================
-// COMPONENTES DE ÍCONES (Nativos do React/SVG)
+// COMPONENTES DE ÍCONES
 // ==========================================
 function ThemeIcon({ theme }) {
     if (theme === 'light') {
@@ -31,7 +30,6 @@ function LogoutIcon() {
     );
 }
 
-// Novos Ícones do Tutorial
 const WelcomeIcon = () => (
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
@@ -60,28 +58,29 @@ const SettingsIcon = () => (
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
 );
-// ==========================================
 
+// ==========================================
+// COMPONENTE PRINCIPAL
+// ==========================================
 export default function Navbar() {
     const [theme, setTheme] = useState(() => {
         return localStorage.getItem('theme') || document.documentElement.getAttribute('data-theme') || 'dark';
     });
-    const [nome, setNome] = useState('');
     
-    // --- ESTADOS DO NOVO TOUR ---
+    const [nome, setNome] = useState('');
     const [mostrarTutorial, setMostrarTutorial] = useState(false);
     const [passoTutorial, setPassoTutorial] = useState(0);
     const [posicaoBalao, setPosicaoBalao] = useState({ top: 0, left: 0, setaPosition: 'center' });
     const [holofote, setHolofote] = useState(null);
+    const [mostrarModalLogout, setMostrarModalLogout] = useState(false);
 
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Passos do Tutorial AGORA COM ÍCONES REACT!
     const passos = [
         {
             alvo: null,
-            icone: <WelcomeIcon />, // Componente React no lugar do Emoji!
+            icone: <WelcomeIcon />,
             titulo: 'Bem-vindo ao EcoLink!',
             texto: 'Preparamos um tour rápido para te mostrar como usar a plataforma. Vamos lá?'
         },
@@ -92,7 +91,7 @@ export default function Navbar() {
             texto: 'Aqui no Marketplace você encontra todos os lotes disponíveis e pode filtrar por categorias.'
         },
         {
-            alvo: 'tour-painel',
+            alvo: 'tour-Dashboard',
             icone: <PackageIcon />,
             titulo: 'Área de Anúncios',
             texto: 'Se você é um Gerador, é aqui que você cadastra seus equipamentos e publica para os Recicladores.'
@@ -105,26 +104,30 @@ export default function Navbar() {
         }
     ];
 
+    // Sincroniza o estado da Navbar com o localStorage
     useEffect(() => {
         const userStr = localStorage.getItem('usuario');
         if (userStr) {
             const user = JSON.parse(userStr);
-            setNome(user.nome ? user.nome.split(' ')[0] : 'Usuario');
-            
+            setNome(user.nome ? user.nome.split(' ')[0] : 'Usuário');
+
+            // Ativa o tutorial apenas se for um novo login e não tiver sido visto
             const tutorialVisto = localStorage.getItem('ecoLink_tutorial_v2');
             if (!tutorialVisto) {
                 setMostrarTutorial(true);
             }
         } else {
             setNome('');
+            setMostrarTutorial(false);
         }
-    }, [location]);
+    }, []);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('theme', theme);
     }, [theme]);
 
+    // Lógica de posicionamento do Holofote do Tutorial
     useEffect(() => {
         if (mostrarTutorial && passos[passoTutorial].alvo) {
             const elementoAlvo = document.getElementById(passos[passoTutorial].alvo);
@@ -158,16 +161,22 @@ export default function Navbar() {
 
     const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
-    const handleLogout = async () => {
-        const confirmou = window.confirm('Tem certeza que deseja sair da conta?');
-        if (!confirmou) return;
-        await supabase.auth.signOut();
+    const handleLogout = () => {
+        setMostrarModalLogout(true);
+    };
+
+    const confirmarLogout = () => {
         localStorage.removeItem('usuario');
-        navigate('/login');
+        setMostrarModalLogout(false);
+        navigate('/home');
+    };
+
+    const cancelarLogout = () => {
+        setMostrarModalLogout(false);
     };
 
     const goToSection = (section) => {
-        if (location.pathname !== '/home') {
+        if (location.pathname !== '/home' && location.pathname !== '/') {
             navigate('/home');
             setTimeout(() => {
                 const element = document.getElementById(section);
@@ -180,7 +189,7 @@ export default function Navbar() {
     };
 
     const isActive = (path) => location.pathname === path;
-    const isLogado = !!nome;
+    const isLogado = !!localStorage.getItem('usuario');
 
     const avancarTutorial = () => {
         if (passoTutorial < passos.length - 1) {
@@ -216,7 +225,7 @@ export default function Navbar() {
                                     <Link id="tour-marketplace" to="/marketplace" className={`nav-link-btn ${isActive('/marketplace') ? 'nav-link-active' : ''}`}>
                                         Marketplace
                                     </Link>
-                                    <Link id="tour-painel" to="/painel" className={`nav-link-btn ${isActive('/painel') ? 'nav-link-active' : ''}`}>
+                                    <Link id="tour-Dashboard" to="/dashboard" className={`nav-link-btn ${isActive('/dashboard') ? 'nav-link-active' : ''}`}>
                                         Anunciar Lote
                                     </Link>
                                 </>
@@ -237,12 +246,12 @@ export default function Navbar() {
                         )}
 
                         <div className="nav-utility-group">
-                            <button onClick={toggleTheme} className="theme-toggle-nav" title="Alternar tema" aria-label="Alternar tema">
+                            <button onClick={toggleTheme} className="theme-toggle-nav" title="Alternar tema">
                                 <ThemeIcon theme={theme} />
                             </button>
 
                             {isLogado && (
-                                <button onClick={handleLogout} className="theme-toggle-nav" title="Sair da conta" aria-label="Sair da conta">
+                                <button onClick={handleLogout} className="theme-toggle-nav" title="Sair da conta">
                                     <LogoutIcon />
                                 </button>
                             )}
@@ -254,7 +263,6 @@ export default function Navbar() {
             {/* --- ESTRUTURA DO TOUR --- */}
             {mostrarTutorial && (
                 <div className={`tour-backdrop ${passos[passoTutorial].alvo ? 'tour-backdrop-transparente' : ''}`}>
-                    
                     {holofote && (
                         <div className="tour-holofote-box" style={{
                             top: holofote.top,
@@ -273,7 +281,6 @@ export default function Navbar() {
                         )}
 
                         <div className="tour-content">
-                            {/* O Ícone injetado dinamicamente ganha a cor principal do texto! */}
                             <div className="tour-icon" style={{ color: 'var(--brand-main, #10b981)' }}>
                                 {passos[passoTutorial].icone}
                             </div>
@@ -289,6 +296,36 @@ export default function Navbar() {
                                 <button className="tour-btn-pular" onClick={finalizarTutorial}>Pular</button>
                                 <button className="tour-btn-proximo" onClick={avancarTutorial}>
                                     {passoTutorial === passos.length - 1 ? 'Entendi!' : 'Próximo'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- MODAL DE CONFIRMAÇÃO DE LOGOUT --- */}
+            {mostrarModalLogout && (
+                <div className="logout-modal-backdrop">
+                    <div className="logout-modal-container">
+                        <div className="logout-modal-content">
+                            <div className="logout-modal-icon">
+                                <LogoutIcon />
+                            </div>
+                            <h3 className="logout-modal-titulo">Deseja sair?</h3>
+                            <p className="logout-modal-texto">Você será desconectado e voltará à página inicial. Pode se conectar novamente a qualquer momento.</p>
+                            
+                            <div className="logout-modal-botoes">
+                                <button 
+                                    className="logout-modal-btn-cancelar"
+                                    onClick={cancelarLogout}
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    className="logout-modal-btn-confirmar"
+                                    onClick={confirmarLogout}
+                                >
+                                    Sair
                                 </button>
                             </div>
                         </div>
