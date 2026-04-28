@@ -30,6 +30,7 @@
     
     /* 2. Cores de Texto */
     --text-main: #064E3B;     /* Verde Floresta Profundo para Títulos */
+    --text-primary: #064E3B;  /* Alias para componentes que usam text-primary */
     --text-description: #374151; 
     --text-white: #ffffff;    
     
@@ -39,6 +40,14 @@
     
     /* 4. Elementos de UI */
     --ui-border: rgba(0, 0, 0, 0.1);
+    --card-bg: rgba(255, 255, 255, 0.90);
+    --card-border: rgba(0, 0, 0, 0.10);
+    --input-bg: rgba(255, 255, 255, 0.93);
+    --input-border: rgba(0, 0, 0, 0.12);
+    --surface-bg: rgba(255, 255, 255, 0.06);
+    --surface-strong-bg: rgba(255, 255, 255, 0.14);
+    --surface-muted-bg: rgba(255, 255, 255, 0.03);
+    --surface-border: rgba(255, 255, 255, 0.18);
     
     /* 5. Configuração das Peças Flutuantes (CONTRASTE ALTO NO BEGE) */
     --bg-floating-opacity: 0.20; /* Aumentei a força para aparecer bem */
@@ -55,6 +64,7 @@
     
     /* Cores de Texto */
     --text-main: #ffffff;     
+    --text-primary: #ffffff;  /* Alias para componentes que usam text-primary */
     --text-description: #D1D5DB; 
     --text-white: #ffffff;
     
@@ -64,6 +74,14 @@
     
     /* Elementos de UI */
     --ui-border: rgba(255, 255, 255, 0.1);
+    --card-bg: rgba(255, 255, 255, 0.06);
+    --card-border: rgba(255, 255, 255, 0.14);
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-border: rgba(255, 255, 255, 0.12);
+    --surface-bg: rgba(255, 255, 255, 0.03);
+    --surface-strong-bg: rgba(255, 255, 255, 0.08);
+    --surface-muted-bg: rgba(255, 255, 255, 0.02);
+    --surface-border: rgba(255, 255, 255, 0.15);
     
     /* Configuração das Peças Flutuantes (BRILHO NO ESCURO) */
     --bg-floating-opacity: 0.12; 

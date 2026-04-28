@@ -228,3 +228,69 @@
     font-weight: 700;
     cursor: pointer;
 }
+
+/* Password Input with Eye Button */
+.fp-password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.fp-password-wrapper .form-input {
+    padding-right: 48px;
+}
+
+.fp-eye-btn {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-description);
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    transition: color 0.2s ease;
+}
+
+.fp-eye-btn:hover {
+    color: var(--text-main);
+}
+
+/* Animação de sucesso */
+@keyframes scaleIn {
+    from {
+        transform: scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Animação de rotação */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Botão de tema no Profile */
+.auth-theme-toggle {
+    background: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-main);
+}
+
+.auth-theme-toggle:hover {
+    background: var(--green-eco);
+    color: white;
+}

@@ -1,0 +1,86 @@
+.my-products-tabs {
+    display: inline-flex;
+    gap: 0.4rem;
+    padding: 0.35rem;
+    border: 1px solid var(--ui-border);
+    border-radius: 12px;
+    background: var(--bg-secondary);
+}
+
+.my-products-tab {
+    border: none;
+    border-radius: 9px;
+    padding: 0.7rem 1.1rem;
+    background: transparent;
+    color: var(--text-description);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.my-products-tab.active {
+    background: var(--brand-main);
+    color: #fff;
+}
+
+.my-products-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0 1.75rem 1.6rem;
+}
+
+.btn-manage {
+    flex: 1;
+    border: 1px solid var(--ui-border);
+    background: var(--bg-primary);
+    color: var(--text-main);
+    border-radius: 10px;
+    padding: 0.75rem 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-manage:hover:not(:disabled) {
+    border-color: var(--brand-main);
+    color: var(--brand-main);
+}
+
+.btn-manage--danger {
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+}
+
+.modal-edit-lote {
+    width: min(720px, 94vw);
+    max-height: 90vh;
+    overflow: auto;
+    border-radius: 18px;
+    border: 1px solid var(--ui-border);
+    background: var(--bg-secondary);
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.modal-edit-lote h3 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 1.2rem;
+}
+
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+}
+
+@media (max-width: 720px) {
+    .my-products-actions {
+        flex-direction: column;
+    }
+
+    .edit-actions {
+        flex-direction: column;
+    }
+}
