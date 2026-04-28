@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import { buildLocalUserFromSupabase, persistAuthenticatedUser } from '../../utils/authUser';
 import './Login.css';
 
 function ThemeIcon({ theme }) {
@@ -84,8 +85,10 @@ export default function Login() {
         const emailToUse = (emailFromQuery || emailFromStorage).trim();
 
         if (emailToUse) {
-            setFormData((prev) => ({ ...prev, email: emailToUse }));
-            localStorage.setItem('pendingAuthEmail', emailToUse);
+            queueMicrotask(() => {
+                setFormData((prev) => ({ ...prev, email: emailToUse }));
+                localStorage.setItem('pendingAuthEmail', emailToUse);
+            });
         }
     }, [location.search]);
 
@@ -137,7 +140,7 @@ export default function Login() {
                 perfil: parsedUser.perfil || 'Usuario',
                 documento: parsedUser.documento || '',
                 telefone: parsedUser.telefone || '',
-                senha: expectedPassword,
+                authProvider: 'local-legacy',
             };
             localStorage.setItem('usuario', JSON.stringify(usuarioParaSalvar));
             return { ok: true };
@@ -167,25 +170,17 @@ export default function Login() {
 
             setErrorModal({
                 visible: true,
-                message: localResult.message || `Não foi possível entrar: ${error.message}`,
+                message: localResult.message || `Nao foi possivel entrar: ${error.message}`,
             });
             setLoading(false);
-        } else {
-            const meta = data.user.user_metadata;
-            const usuarioParaSalvar = {
-                email: data.user.email,
-                nome: meta.nome || 'Usuário',
-                perfil: meta.perfil || 'Usuario',
-                documento: meta.documento || '',
-                telefone: meta.telefone || ''
-            };
-
-            localStorage.setItem('usuario', JSON.stringify(usuarioParaSalvar));
-            setLoading(false);
-            navigate('/home');
+            return;
         }
-    };
 
+        const usuarioParaSalvar = buildLocalUserFromSupabase(data.user);
+        persistAuthenticatedUser(usuarioParaSalvar);
+        setLoading(false);
+        navigate('/home');
+    };
     return (
         <div className="auth-page">
             {errorModal.visible && (

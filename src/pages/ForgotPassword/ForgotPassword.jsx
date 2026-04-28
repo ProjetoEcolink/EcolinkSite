@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './ForgotPassword.css';
+import { supabase } from '../../supabaseClient';
 import { PASSWORD_MAX_LENGTH, validatePasswordStrength } from '../../utils/passwordPolicy';
 
 function ThemeIcon({ theme }) {
     if (theme === 'light') {
         return (
             <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" width="24" height="24">
-                <path d="M20.354 15.354A9 9 0 1 1 8.646 3.646a7 7 0 0 0 11.708 11.708Z"
-                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                    d="M20.354 15.354A9 9 0 1 1 8.646 3.646a7 7 0 0 0 11.708 11.708Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
             </svg>
         );
     }
+
     return (
         <svg className="theme-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" width="24" height="24">
             <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-                stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+            />
         </svg>
     );
 }
@@ -30,6 +41,7 @@ function EyeIcon({ open }) {
             </svg>
         );
     }
+
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
@@ -41,6 +53,7 @@ function EyeIcon({ open }) {
 
 function PasswordInput({ value, onChange, placeholder }) {
     const [show, setShow] = useState(false);
+
     return (
         <div className="fp-password-wrapper">
             <input
@@ -59,32 +72,119 @@ function PasswordInput({ value, onChange, placeholder }) {
     );
 }
 
+function isRecoveryFromUrl() {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('type') === 'recovery') {
+        return true;
+    }
+
+    const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hash);
+    return hashParams.get('type') === 'recovery';
+}
+
+function getAuthUrlParam(name) {
+    const searchParams = new URLSearchParams(window.location.search);
+    const searchValue = searchParams.get(name);
+    if (searchValue) return searchValue;
+
+    const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hash);
+    return hashParams.get(name);
+}
+
+function describeRecoveryEmailError(error) {
+    const parts = [error?.message, error?.code, error?.status ? `status ${error.status}` : ''].filter(Boolean);
+    const details = parts.length ? ` (${parts.join(' | ')})` : '';
+
+    if (error?.message?.toLowerCase().includes('rate limit')) {
+        return `Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.${details}`;
+    }
+
+    if (error?.message?.toLowerCase().includes('redirect')) {
+        return `URL de redirecionamento nao autorizada no Supabase. Confira se ${window.location.origin}/esqueci-senha esta em Authentication > URL Configuration.${details}`;
+    }
+
+    if (error?.message?.toLowerCase().includes('email')) {
+        return `Falha no provedor de e-mail do Supabase. Confira SMTP, template de recuperacao e limites do projeto.${details}`;
+    }
+
+    return `Nao foi possivel enviar o e-mail de recuperacao agora.${details}`;
+}
+
 export default function ForgotPassword() {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(() => localStorage.getItem('pendingAuthEmail') || '');
     const [emailErro, setEmailErro] = useState('');
-    const [codigo, setCodigo] = useState('');
-    const [codigoErro, setCodigoErro] = useState('');
+    const [infoMsg, setInfoMsg] = useState('');
     const [novaSenha, setNovaSenha] = useState('');
     const [confirmarSenha, setConfirmarSenha] = useState('');
     const [senhaErro, setSenhaErro] = useState('');
+    const [sendingEmail, setSendingEmail] = useState(false);
+    const [savingPassword, setSavingPassword] = useState(false);
+    const [recoveryEmail, setRecoveryEmail] = useState('');
+    const [recoveryError, setRecoveryError] = useState('');
 
-    const [theme, setTheme] = useState(() => {
-        return document.documentElement.getAttribute('data-theme') || 'dark';
-    });
-
-    useEffect(() => {
-        const emailSalvo = localStorage.getItem('pendingAuthEmail') || '';
-        if (emailSalvo) setEmail(emailSalvo);
-    }, []);
+    const [theme, setTheme] = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
 
     useEffect(() => {
         const observer = new MutationObserver(() => {
             setTheme(document.documentElement.getAttribute('data-theme') || 'dark');
         });
+
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
         return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        const bootstrapRecovery = async () => {
+            const hasRecovery = isRecoveryFromUrl();
+            const authError = getAuthUrlParam('error_description') || getAuthUrlParam('error');
+            const code = getAuthUrlParam('code');
+
+            if (authError) {
+                setRecoveryError('Link invalido ou expirado. Solicite um novo e-mail de recuperacao.');
+                setStep(1);
+                window.history.replaceState({}, document.title, '/esqueci-senha');
+                return;
+            }
+
+            if (code) {
+                const { error } = await supabase.auth.exchangeCodeForSession(code);
+                if (error) {
+                    setRecoveryError('Link invalido ou expirado. Solicite um novo e-mail de recuperacao.');
+                    setStep(1);
+                    window.history.replaceState({}, document.title, '/esqueci-senha');
+                    return;
+                }
+            }
+
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (hasRecovery && session?.user?.email) {
+                setRecoveryEmail(session.user.email);
+                localStorage.setItem('pendingAuthEmail', session.user.email);
+            }
+
+            if (hasRecovery || code) {
+                setStep(3);
+            }
+        };
+
+        bootstrapRecovery();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                setRecoveryEmail(session?.user?.email || '');
+                if (session?.user?.email) {
+                    localStorage.setItem('pendingAuthEmail', session.user.email);
+                }
+                setStep(3);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const toggleTheme = () => {
@@ -94,75 +194,78 @@ export default function ForgotPassword() {
         setTheme(next);
     };
 
-    // Etapa 1 — Verifica se e-mail existe no localStorage
-    const handleEmailSubmit = (e) => {
+    const handleEmailSubmit = async (e) => {
         e.preventDefault();
         setEmailErro('');
+        setInfoMsg('');
+        setRecoveryError('');
 
-        const emailKey = email.trim().toLowerCase();
-        const usuarioExiste = localStorage.getItem(`ecolink-user-${emailKey}`);
-
-        if (!usuarioExiste) {
-            setEmailErro('E-mail não encontrado. Verifique o endereço ou cadastre-se.');
+        const cleanEmail = email.trim().toLowerCase();
+        if (!cleanEmail) {
+            setEmailErro('Informe um e-mail valido.');
             return;
         }
 
-        localStorage.setItem('pendingAuthEmail', email.trim());
+        setSendingEmail(true);
+        const redirectTo = `${window.location.origin}/esqueci-senha`;
+        const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo });
+        setSendingEmail(false);
+
+        if (error) {
+            setEmailErro(describeRecoveryEmailError(error));
+            return;
+        }
+
+        localStorage.setItem('pendingAuthEmail', cleanEmail);
+        setInfoMsg('Enviamos um link de recuperacao para seu e-mail. Abra o link para redefinir a senha.');
         setStep(2);
     };
 
-    // Etapa 2 — Qualquer código de 6 dígitos funciona (fake)
-    const handleCodigoSubmit = (e) => {
-        e.preventDefault();
-        setCodigoErro('');
-
-        if (codigo.length !== 6) {
-            setCodigoErro('Digite exatamente 6 dígitos.');
-            return;
-        }
-
-        setStep(3);
-    };
-
-    // Etapa 3 — Salva nova senha no localStorage
-    const handleSenhaSubmit = (e) => {
+    const handleSenhaSubmit = async (e) => {
         e.preventDefault();
         setSenhaErro('');
 
-        const senhaErro = validatePasswordStrength(novaSenha);
-        if (senhaErro) {
-            setSenhaErro(senhaErro);
+        const senhaValidationError = validatePasswordStrength(novaSenha);
+        if (senhaValidationError) {
+            setSenhaErro(senhaValidationError);
             return;
         }
+
         if (novaSenha !== confirmarSenha) {
-            setSenhaErro('As senhas não coincidem.');
+            setSenhaErro('As senhas nao coincidem.');
             return;
         }
 
-        const emailKey = email.trim().toLowerCase();
-        const senhaAtual = localStorage.getItem(`ecolink-password-${emailKey}`);
+        setSavingPassword(true);
+        const { data: { session } } = await supabase.auth.getSession();
 
-        if (senhaAtual && novaSenha === senhaAtual) {
-            setSenhaErro('A nova senha não pode ser igual à senha anterior.');
+        if (!session) {
+            setSavingPassword(false);
+            setSenhaErro('Link invalido ou expirado. Solicite um novo e-mail de recuperacao.');
             return;
         }
 
-        // Atualiza senha em ambos os locais para manter o login funcionando
-        localStorage.setItem(`ecolink-password-${emailKey}`, novaSenha);
-
-        const usuarioSalvo = localStorage.getItem(`ecolink-user-${emailKey}`);
-        if (usuarioSalvo) {
-            const usuario = JSON.parse(usuarioSalvo);
-            usuario.senha = novaSenha;
-            localStorage.setItem(`ecolink-user-${emailKey}`, JSON.stringify(usuario));
+        const { error } = await supabase.auth.updateUser({ password: novaSenha });
+        if (error) {
+            setSavingPassword(false);
+            setSenhaErro(error.message || 'Nao foi possivel redefinir a senha.');
+            return;
         }
 
+        const emailToStore = session.user?.email || recoveryEmail || email;
+        if (emailToStore) {
+            localStorage.setItem('pendingAuthEmail', emailToStore);
+        }
+
+        localStorage.removeItem('usuario');
+        await supabase.auth.signOut();
+        window.history.replaceState({}, document.title, '/esqueci-senha');
+        setSavingPassword(false);
         setStep(4);
     };
 
     return (
         <div className="auth-page">
-
             <header className="auth-topbar">
                 <Link to="/home" style={{ textDecoration: 'none' }}>
                     <div className="auth-topbar-logo">Eco<span className="text-eco">Link</span></div>
@@ -173,8 +276,6 @@ export default function ForgotPassword() {
             </header>
 
             <div className="auth-container">
-
-                {/* Indicador de etapas */}
                 {step < 4 && (
                     <div className="fp-steps">
                         {[1, 2, 3].map((s) => (
@@ -192,7 +293,6 @@ export default function ForgotPassword() {
                     </div>
                 )}
 
-                {/* Etapa 1 — E-mail */}
                 {step === 1 && (
                     <>
                         <div className="auth-header">
@@ -203,70 +303,67 @@ export default function ForgotPassword() {
                                 </svg>
                             </div>
                             <h2>Recuperar senha</h2>
-                            <p>Digite seu e-mail e enviaremos um código de verificação.</p>
+                            <p>Digite seu e-mail e enviaremos um link seguro para redefinir sua senha.</p>
                         </div>
                         <form className="auth-form" onSubmit={handleEmailSubmit}>
                             <div className="form-group">
-                                <label className="form-label">E-mail Corporativo</label>
+                                <label className="form-label">E-mail corporativo</label>
                                 <input
                                     type="email"
-                                    className="form-input"
+                                    className={`form-input ${emailErro ? 'input-error' : ''}`}
                                     placeholder="seu@empresa.com.br"
                                     value={email}
-                                    onChange={(e) => { setEmail(e.target.value); setEmailErro(''); }}
+                                    onChange={(e) => {
+                                        setEmail(e.target.value);
+                                        setEmailErro('');
+                                        setInfoMsg('');
+                                    }}
                                     required
                                 />
                                 {emailErro && <span className="fp-error">{emailErro}</span>}
+                                {recoveryError && <span className="fp-error">{recoveryError}</span>}
                             </div>
-                            <button type="submit" className="btn-submit">Enviar código</button>
+                            <button type="submit" className="btn-submit" disabled={sendingEmail}>
+                                {sendingEmail ? 'Enviando link...' : 'Enviar link de recuperacao'}
+                            </button>
                             <Link to="/login" className="auth-back-link">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M19 12H5M12 19l-7-7 7-7" />
                                 </svg>
-                                Voltar para Login
+                                Voltar para login
                             </Link>
                         </form>
                     </>
                 )}
 
-                {/* Etapa 2 — Código fake (qualquer 6 dígitos) */}
                 {step === 2 && (
                     <>
                         <div className="auth-header">
                             <div className="forgot-icon">
                                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                                    <path d="m22 7-10 6L2 7" />
                                 </svg>
                             </div>
                             <h2>Verifique seu e-mail</h2>
-                            <p>Enviamos um código para <strong>{email}</strong>. Digite qualquer 6 dígitos para continuar.</p>
+                            <p>
+                                {infoMsg || 'Se o e-mail existir na plataforma, voce recebera o link de recuperacao em instantes.'}
+                            </p>
                         </div>
-                        <form className="auth-form" onSubmit={handleCodigoSubmit}>
-                            <div className="form-group">
-                                <label className="form-label">Código de verificação</label>
-                                <input
-                                    type="text"
-                                    className={`form-input fp-code-input ${codigoErro ? 'input-error' : ''}`}
-                                    placeholder="000000"
-                                    maxLength={6}
-                                    value={codigo}
-                                    onChange={(e) => { setCodigo(e.target.value.replace(/\D/g, '')); setCodigoErro(''); }}
-                                    required
-                                />
-                                {codigoErro && <span className="fp-error">{codigoErro}</span>}
-                            </div>
-                            <button type="submit" className="btn-submit">Verificar código</button>
-                            <button type="button" className="auth-back-link fp-resend" onClick={() => setStep(1)}>
+                        <div className="auth-form">
+                            <button type="button" className="btn-submit" onClick={() => setStep(1)}>
+                                Reenviar link
+                            </button>
+                            <Link to="/login" className="auth-back-link">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M19 12H5M12 19l-7-7 7-7" />
                                 </svg>
-                                Voltar
-                            </button>
-                        </form>
+                                Voltar para login
+                            </Link>
+                        </div>
                     </>
                 )}
 
-                {/* Etapa 3 — Nova senha */}
                 {step === 3 && (
                     <>
                         <div className="auth-header">
@@ -275,15 +372,22 @@ export default function ForgotPassword() {
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                                 </svg>
                             </div>
-                            <h2>Nova senha</h2>
-                            <p>Use entre 8 e 24 caracteres, com letra maiúscula, minúscula e número.</p>
+                            <h2>Defina sua nova senha</h2>
+                            <p>
+                                {recoveryEmail
+                                    ? `Recuperacao para ${recoveryEmail}.`
+                                    : 'Use entre 8 e 24 caracteres, com letra maiuscula, minuscula e numero.'}
+                            </p>
                         </div>
                         <form className="auth-form" onSubmit={handleSenhaSubmit}>
                             <div className="form-group">
                                 <label className="form-label">Nova senha</label>
                                 <PasswordInput
                                     value={novaSenha}
-                                    onChange={(e) => { setNovaSenha(e.target.value); setSenhaErro(''); }}
+                                    onChange={(e) => {
+                                        setNovaSenha(e.target.value);
+                                        setSenhaErro('');
+                                    }}
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -291,17 +395,21 @@ export default function ForgotPassword() {
                                 <label className="form-label">Confirmar nova senha</label>
                                 <PasswordInput
                                     value={confirmarSenha}
-                                    onChange={(e) => { setConfirmarSenha(e.target.value); setSenhaErro(''); }}
+                                    onChange={(e) => {
+                                        setConfirmarSenha(e.target.value);
+                                        setSenhaErro('');
+                                    }}
                                     placeholder="••••••••"
                                 />
                             </div>
-                            {senhaErro && <span className="fp-error">{senhaErro}</span>}
-                            <button type="submit" className="btn-submit">Redefinir senha</button>
+                            {(senhaErro || recoveryError) && <span className="fp-error">{senhaErro || recoveryError}</span>}
+                            <button type="submit" className="btn-submit" disabled={savingPassword}>
+                                {savingPassword ? 'Salvando...' : 'Redefinir senha'}
+                            </button>
                         </form>
                     </>
                 )}
 
-                {/* Etapa 4 — Sucesso */}
                 {step === 4 && (
                     <div className="forgot-success">
                         <div className="success-circle">
@@ -309,17 +417,16 @@ export default function ForgotPassword() {
                                 <polyline points="20 6 9 17 4 12" />
                             </svg>
                         </div>
-                        <h2>Senha redefinida!</h2>
-                        <p>Sua senha foi alterada com sucesso.<br />Agora você pode entrar na plataforma.</p>
+                        <h2>Senha redefinida</h2>
+                        <p>Sua senha foi alterada com sucesso. Agora entre novamente na plataforma.</p>
                         <button className="btn-submit fp-success-btn" onClick={() => navigate('/login')}>
-                            Ir para o Login
+                            Ir para o login
                         </button>
                         <Link to="/home" className="auth-back-link" style={{ marginTop: '0.5rem' }}>
-                            Voltar para Home
+                            Voltar para home
                         </Link>
                     </div>
                 )}
-
             </div>
         </div>
     );

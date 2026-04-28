@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
+import { supabase } from '../../supabaseClient';
+import { getOrCreateEmpresaForUser } from '../../utils/empresa';
+import { buildLocalUserFromSupabase, clearAuthenticatedUser, persistAuthenticatedUser } from '../../utils/authUser';
 import { PASSWORD_MAX_LENGTH, validatePasswordStrength } from '../../utils/passwordPolicy';
 
 function ThemeIcon({ theme }) {
@@ -39,6 +42,26 @@ function EyeIcon({ open }) {
     );
 }
 
+function normalizeStorageNames(lote) {
+    const urls = [];
+    if (Array.isArray(lote?.fotos_urls)) {
+        urls.push(...lote.fotos_urls);
+    } else if (typeof lote?.fotos_urls === 'string') {
+        try {
+            const parsed = JSON.parse(lote.fotos_urls);
+            if (Array.isArray(parsed)) urls.push(...parsed);
+        } catch {
+            urls.push(lote.fotos_urls);
+        }
+    }
+
+    if (lote?.foto_url) urls.push(lote.foto_url);
+
+    return urls
+        .map((url) => String(url || '').split('/').pop())
+        .filter(Boolean);
+}
+
 export default function Profile() {
     const [user, setUser] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
@@ -49,22 +72,19 @@ export default function Profile() {
     const [deletionEmailSent, setDeletionEmailSent] = useState(false); // ← novo: email foi enviado
     const [deletionLoading, setDeletionLoading] = useState(false); // ← novo: está enviando email
     const [showChangePassword, setShowChangePassword] = useState(false); // ← novo
-    const [passwordStep, setPasswordStep] = useState(1); // ← novo: controla etapas 1-3
     const [showNovaSenhaField, setShowNovaSenhaField] = useState(false); // ← novo: mostra/oculta nova senha
     const [showConfirmarSenhaField, setShowConfirmarSenhaField] = useState(false); // ← novo: mostra/oculta confirmação
     const [showPasswordSuccess, setShowPasswordSuccess] = useState(false); // ← novo: modal de sucesso
+    const [isPasswordLoading, setIsPasswordLoading] = useState(false);
     const [showProfileSuccess, setShowProfileSuccess] = useState(false); // ← novo: modal de sucesso para atualização de perfil
     const [passwordData, setPasswordData] = useState({
         senhaAtual: '',
-        codigo: '',
         novaSenha: '',
         confirmarSenha: ''
     }); // ← novo
     const [passwordError, setPasswordError] = useState(''); // ← novo
     const [showChangeEmail, setShowChangeEmail] = useState(false); // ← novo: modal de mudança de email
     const [emailStep, setEmailStep] = useState(1); // ← novo: controla etapas 1-3 do email
-    const [showNovoEmailField, setShowNovoEmailField] = useState(false); // ← novo: mostra/oculta novo email
-    const [showConfirmarEmailField, setShowConfirmarEmailField] = useState(false); // ← novo: mostra/oculta confirmação email
     const [showEmailSuccess, setShowEmailSuccess] = useState(false); // ← novo: modal de sucesso email
     const [emailData, setEmailData] = useState({
         senhaAtual: '',
@@ -88,20 +108,29 @@ export default function Profile() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const userStr = localStorage.getItem('usuario');
-        if (userStr) {
-            const currentUser = JSON.parse(userStr);
-            setUser(currentUser);
-            setFormData({
-                nome: currentUser.nome || '',
-                email: currentUser.email || '',
-                telefone: currentUser.telefone || '',
-                documento: currentUser.documento || '',
-                perfil: currentUser.perfil || ''
-            });
-        } else {
-            setUser(false);
-        }
+        const loadUser = async () => {
+            const userStr = localStorage.getItem('usuario');
+            const localUser = userStr ? JSON.parse(userStr) : null;
+            const { data: { session } } = await supabase.auth.getSession();
+            const currentUser = session?.user
+                ? persistAuthenticatedUser(buildLocalUserFromSupabase(session.user, localUser || {}))
+                : localUser;
+
+            if (currentUser) {
+                setUser(currentUser);
+                setFormData({
+                    nome: currentUser.nome || '',
+                    email: currentUser.email || '',
+                    telefone: currentUser.telefone || '',
+                    documento: currentUser.documento || '',
+                    perfil: currentUser.perfil || ''
+                });
+            } else {
+                setUser(false);
+            }
+        };
+
+        loadUser();
     }, []);
 
     // useEffect para sincronizar tema
@@ -120,13 +149,33 @@ export default function Profile() {
         setTheme(next);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const updatedUser = {
             ...user,
             nome: formData.nome,
             telefone: formData.telefone
         };
-        localStorage.setItem('usuario', JSON.stringify(updatedUser));
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            await supabase.auth.updateUser({
+                data: {
+                    nome: updatedUser.nome,
+                    perfil: updatedUser.perfil,
+                    documento: updatedUser.documento,
+                    telefone: updatedUser.telefone,
+                },
+            });
+            await supabase
+                .from('perfis')
+                .update({
+                    nome: updatedUser.nome,
+                    telefone: updatedUser.telefone,
+                })
+                .eq('id', session.user.id);
+        }
+
+        persistAuthenticatedUser(updatedUser);
         setUser(updatedUser);
         setIsEditing(false);
         setShowSaveModal(false);
@@ -136,8 +185,9 @@ export default function Profile() {
         }, 2000);
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('usuario');
+    const handleLogout = async () => {
+        clearAuthenticatedUser();
+        await supabase.auth.signOut();
         navigate('/home');
         window.location.reload();
     };
@@ -157,14 +207,54 @@ export default function Profile() {
     };
 
     // Etapa 2 — Confirma exclusão (após clicar no link do email fake)
-    const handleDeleteAccountConfirm = () => {
+    const handleDeleteAccountConfirm = async () => {
+        if (!user?.email) return;
+
+        setDeletionLoading(true);
         const emailKey = user.email.toLowerCase();
-        localStorage.removeItem(`ecolink-user-${emailKey}`);
-        localStorage.removeItem(`ecolink-password-${emailKey}`);
-        localStorage.removeItem('usuario');
-        setShowDeleteConfirmationEmail(false);
-        navigate('/home');
-        window.location.reload();
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { error: rpcError } = await supabase.rpc('delete_my_account');
+                if (rpcError) {
+                    const empresaId = await getOrCreateEmpresaForUser(user);
+                    const { data: lotesUsuario } = await supabase
+                        .from('lotes')
+                        .select('id, fotos_urls, foto_url')
+                        .eq('empresa_id', empresaId);
+
+                    const nomes = (lotesUsuario || [])
+                        .flatMap((lote) => normalizeStorageNames(lote))
+                        .filter(Boolean);
+
+                    if (nomes.length) {
+                        await supabase.storage.from('lotes-fotos').remove(nomes);
+                    }
+
+                    const { error: deleteLotesError } = await supabase
+                        .from('lotes')
+                        .delete()
+                        .eq('empresa_id', empresaId);
+                    if (deleteLotesError) throw deleteLotesError;
+
+                    await supabase.from('empresas').delete().eq('id', empresaId);
+                    await supabase.from('perfis').delete().eq('id', session.user.id);
+                }
+            }
+
+            localStorage.removeItem(`ecolink-user-${emailKey}`);
+            localStorage.removeItem(`ecolink-password-${emailKey}`);
+            clearAuthenticatedUser();
+            await supabase.auth.signOut();
+            setShowDeleteConfirmationEmail(false);
+            navigate('/home');
+            window.location.reload();
+        } catch (error) {
+            alert(`Erro ao excluir conta: ${error.message}`);
+        } finally {
+            setDeletionLoading(false);
+        }
     };
 
     // Cancela exclusão
@@ -174,39 +264,14 @@ export default function Profile() {
         setDeletionLoading(false);
     };
 
-    // Etapa 1 — Validar senha atual
-    const handlePasswordStep1 = (e) => {
+    const handlePasswordSubmit = async (e) => {
         e.preventDefault();
         setPasswordError('');
 
-        const emailKey = user.email.toLowerCase();
-        const senhaSalva = user.senha || localStorage.getItem(`ecolink-password-${emailKey}`);
-
-        if (!passwordData.senhaAtual || passwordData.senhaAtual !== senhaSalva) {
-            setPasswordError('Senha atual incorreta.');
+        if (!passwordData.senhaAtual || !passwordData.novaSenha || !passwordData.confirmarSenha) {
+            setPasswordError('Preencha todos os campos para alterar a senha.');
             return;
         }
-
-        setPasswordStep(2);
-    };
-
-    // Etapa 2 — Validar código fake (6 dígitos)
-    const handlePasswordStep2 = (e) => {
-        e.preventDefault();
-        setPasswordError('');
-
-        if (passwordData.codigo.length !== 6) {
-            setPasswordError('Digite exatamente 6 dígitos.');
-            return;
-        }
-
-        setPasswordStep(3);
-    };
-
-    // Etapa 3 — Salvar nova senha
-    const handlePasswordStep3 = (e) => {
-        e.preventDefault();
-        setPasswordError('');
 
         const senhaErro = validatePasswordStrength(passwordData.novaSenha);
         if (senhaErro) {
@@ -215,44 +280,85 @@ export default function Profile() {
         }
 
         if (passwordData.novaSenha !== passwordData.confirmarSenha) {
-            setPasswordError('As senhas não coincidem.');
+            setPasswordError('As senhas nao coincidem.');
             return;
         }
 
-        const emailKey = user.email.toLowerCase();
-        const senhaSalva = user.senha || localStorage.getItem(`ecolink-password-${emailKey}`);
-
-        if (passwordData.novaSenha === senhaSalva) {
-            setPasswordError('A nova senha não pode ser igual à senha anterior.');
+        if (passwordData.novaSenha === passwordData.senhaAtual) {
+            setPasswordError('A nova senha nao pode ser igual a senha atual.');
             return;
         }
 
-        // Atualiza senha em ambos os locais
-        localStorage.setItem(`ecolink-password-${emailKey}`, passwordData.novaSenha);
+        if (user?.authProvider === 'local-legacy') {
+            setPasswordError('Esta conta foi criada no fluxo local antigo. Entre com uma conta Supabase para alterar a senha com seguranca.');
+            return;
+        }
 
-        const usuarioAtualizado = {
-            ...user,
-            senha: passwordData.novaSenha
-        };
-        localStorage.setItem('usuario', JSON.stringify(usuarioAtualizado));
-        localStorage.setItem(`ecolink-user-${emailKey}`, JSON.stringify(usuarioAtualizado));
-        setUser(usuarioAtualizado);
+        setIsPasswordLoading(true);
+        try {
+            const email = String(user?.email || '').trim().toLowerCase();
+            if (!email) {
+                setPasswordError('Nao foi possivel identificar o e-mail da conta para validar a senha.');
+                return;
+            }
 
-        setShowPasswordSuccess(true);
-        setTimeout(() => {
-            setShowPasswordSuccess(false);
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email,
+                password: passwordData.senhaAtual,
+            });
+
+            if (signInError) {
+                setPasswordError('Senha atual incorreta.');
+                return;
+            }
+
+            const { error: updateError } = await supabase.auth.updateUser({
+                password: passwordData.novaSenha,
+            });
+
+            if (updateError) {
+                setPasswordError(updateError.message || 'Nao foi possivel alterar a senha agora.');
+                return;
+            }
+
+            const emailKey = String(email || '').toLowerCase();
+            const usuarioAtualizado = { ...user };
+            delete usuarioAtualizado.senha;
+
+            localStorage.setItem('usuario', JSON.stringify(usuarioAtualizado));
+            setUser(usuarioAtualizado);
+
+            if (emailKey) {
+                localStorage.removeItem(`ecolink-password-${emailKey}`);
+                const usuarioLocalStorage = localStorage.getItem(`ecolink-user-${emailKey}`);
+                if (usuarioLocalStorage) {
+                    try {
+                        const parsedUser = JSON.parse(usuarioLocalStorage);
+                        delete parsedUser.senha;
+                        localStorage.setItem(`ecolink-user-${emailKey}`, JSON.stringify(parsedUser));
+                    } catch {
+                        // Se nao conseguir ler o JSON legado, seguimos com a senha real no Supabase.
+                    }
+                }
+            }
+
             handleClosePasswordModal();
-        }, 2000);
+            setShowPasswordSuccess(true);
+            setTimeout(() => {
+                setShowPasswordSuccess(false);
+            }, 2000);
+        } finally {
+            setIsPasswordLoading(false);
+        }
     };
 
     const handleClosePasswordModal = () => {
         setShowChangePassword(false);
-        setPasswordStep(1);
         setShowNovaSenhaField(false);
         setShowConfirmarSenhaField(false);
+        setIsPasswordLoading(false);
         setPasswordData({
             senhaAtual: '',
-            codigo: '',
             novaSenha: '',
             confirmarSenha: ''
         });
@@ -346,8 +452,6 @@ export default function Profile() {
     const handleCloseEmailModal = () => {
         setShowChangeEmail(false);
         setEmailStep(1);
-        setShowNovoEmailField(false);
-        setShowConfirmarEmailField(false);
         setEmailData({
             senhaAtual: '',
             codigo: '',
@@ -658,7 +762,10 @@ export default function Profile() {
                                         </svg>
                                     </div>
                                     <h3 className="text-white" style={{marginBottom: '10px'}}>Enviando confirmação</h3>
-                                    <p className="text-dim">Estamos enviando um email de confirmação para <strong>{user.email}</strong></p>
+                                    <p className="text-dim">
+                                        {deletionLoading ? 'Estamos enviando um email de confirmação para ' : 'Email de confirmação para '}
+                                        <strong>{user.email}</strong>
+                                    </p>
                                     <div style={{margin: '20px 0'}}>
                                         <div style={{
                                             display: 'inline-block',
@@ -713,144 +820,84 @@ export default function Profile() {
                 </div>
             )}
 
-            {/* Modal: Alterar Senha — 3 etapas */}
+            {/* Modal: Alterar Senha */}
             {showChangePassword && (
                 <div className="modal-overlay">
                     <div className="modal-content" style={{maxWidth: '500px'}}>
-                        
-                        {/* Indicador de etapas */}
-                        {passwordStep < 4 && (
-                            <div className="fp-steps" style={{marginBottom: '30px', justifyContent: 'center'}}>
-                                {[1, 2, 3].map((s) => (
-                                    <React.Fragment key={s}>
-                                        <div className={`fp-step ${passwordStep >= s ? 'active' : ''} ${passwordStep > s ? 'done' : ''}`}>
-                                            {passwordStep > s ? (
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                    <polyline points="20 6 9 17 4 12" />
-                                                </svg>
-                                            ) : s}
-                                        </div>
-                                        {s < 3 && <div className={`fp-step-line ${passwordStep > s ? 'active' : ''}`} />}
-                                    </React.Fragment>
-                                ))}
+                        <h3 className="text-white" style={{marginBottom: '10px'}}>Alterar senha</h3>
+                        <p className="text-dim" style={{marginBottom: '20px'}}>
+                            Confirme sua senha atual e defina uma nova senha segura.
+                        </p>
+
+                        <form onSubmit={handlePasswordSubmit}>
+                            <div className="form-item" style={{marginBottom: '15px'}}>
+                                <label className="form-label">Senha atual</label>
+                                <input
+                                    type="password"
+                                    className="form-input"
+                                    placeholder="••••••••"
+                                    maxLength={PASSWORD_MAX_LENGTH}
+                                    value={passwordData.senhaAtual}
+                                    onChange={(e) => {
+                                        setPasswordData({ ...passwordData, senhaAtual: e.target.value });
+                                        setPasswordError('');
+                                    }}
+                                    required
+                                />
                             </div>
-                        )}
 
-                        {/* Etapa 1 — Confirmar senha atual */}
-                        {passwordStep === 1 && (
-                            <>
-                                <h3 className="text-white" style={{marginBottom: '10px'}}>Confirme sua senha</h3>
-                                <p className="text-dim" style={{marginBottom: '20px'}}>Digite sua senha atual para continuar.</p>
-                                <form onSubmit={handlePasswordStep1}>
-                                    <div className="form-item" style={{marginBottom: '15px'}}>
-                                        <label className="form-label">Senha Atual</label>
-                                        <input 
-                                            type="password" 
-                                            className="form-input"
-                                            placeholder="••••••••"
-                                            maxLength={PASSWORD_MAX_LENGTH}
-                                            value={passwordData.senhaAtual}
-                                            onChange={(e) => {setPasswordData({...passwordData, senhaAtual: e.target.value}); setPasswordError('');}}
-                                            required
-                                        />
-                                    </div>
-                                    {passwordError && <span className="fp-error">{passwordError}</span>}
-                                    <div className="modal-buttons" style={{marginTop: '20px'}}>
-                                        <button type="button" className="btn-cancel" onClick={handleClosePasswordModal}>
-                                            Cancelar
-                                        </button>
-                                        <button type="submit" className="btn-confirm-del" style={{background: 'var(--green-eco)'}}>
-                                            Continuar
-                                        </button>
-                                    </div>
-                                </form>
-                            </>
-                        )}
+                            <div className="form-item" style={{marginBottom: '15px'}}>
+                                <label className="form-label">Nova senha</label>
+                                <div className="fp-password-wrapper" style={{position: 'relative'}}>
+                                    <input
+                                        type={showNovaSenhaField ? 'text' : 'password'}
+                                        className="form-input"
+                                        placeholder="••••••••"
+                                        maxLength={PASSWORD_MAX_LENGTH}
+                                        value={passwordData.novaSenha}
+                                        onChange={(e) => {
+                                            setPasswordData({ ...passwordData, novaSenha: e.target.value });
+                                            setPasswordError('');
+                                        }}
+                                        required
+                                    />
+                                    <button type="button" className="fp-eye-btn" onClick={() => setShowNovaSenhaField(!showNovaSenhaField)} aria-label="Mostrar senha">
+                                        <EyeIcon open={showNovaSenhaField} />
+                                    </button>
+                                </div>
+                            </div>
 
-                        {/* Etapa 2 — Código fake (6 dígitos) */}
-                        {passwordStep === 2 && (
-                            <>
-                                <h3 className="text-white" style={{marginBottom: '10px'}}>Verificação</h3>
-                                <p className="text-dim" style={{marginBottom: '20px'}}>Digite qualquer código de 6 dígitos para continuar.</p>
-                                <form onSubmit={handlePasswordStep2}>
-                                    <div className="form-item" style={{marginBottom: '15px'}}>
-                                        <label className="form-label">Código de verificação</label>
-                                        <input 
-                                            type="text" 
-                                            className="form-input fp-code-input"
-                                            placeholder="000000"
-                                            maxLength={6}
-                                            value={passwordData.codigo}
-                                            onChange={(e) => {setPasswordData({...passwordData, codigo: e.target.value.replace(/\D/g, '')}); setPasswordError('');}}
-                                            required
-                                        />
-                                    </div>
-                                    {passwordError && <span className="fp-error">{passwordError}</span>}
-                                    <div className="modal-buttons" style={{marginTop: '20px'}}>
-                                        <button type="button" className="btn-cancel" onClick={() => {setPasswordStep(1); setPasswordError('');}}>
-                                            Voltar
-                                        </button>
-                                        <button type="submit" className="btn-confirm-del" style={{background: 'var(--green-eco)'}}>
-                                            Continuar
-                                        </button>
-                                    </div>
-                                </form>
-                            </>
-                        )}
+                            <div className="form-item" style={{marginBottom: '15px'}}>
+                                <label className="form-label">Confirmar nova senha</label>
+                                <div className="fp-password-wrapper" style={{position: 'relative'}}>
+                                    <input
+                                        type={showConfirmarSenhaField ? 'text' : 'password'}
+                                        className="form-input"
+                                        placeholder="••••••••"
+                                        maxLength={PASSWORD_MAX_LENGTH}
+                                        value={passwordData.confirmarSenha}
+                                        onChange={(e) => {
+                                            setPasswordData({ ...passwordData, confirmarSenha: e.target.value });
+                                            setPasswordError('');
+                                        }}
+                                        required
+                                    />
+                                    <button type="button" className="fp-eye-btn" onClick={() => setShowConfirmarSenhaField(!showConfirmarSenhaField)} aria-label="Mostrar senha">
+                                        <EyeIcon open={showConfirmarSenhaField} />
+                                    </button>
+                                </div>
+                            </div>
 
-                        {/* Etapa 3 — Nova senha */}
-                        {passwordStep === 3 && (
-                            <>
-                                <h3 className="text-white" style={{marginBottom: '10px'}}>Nova senha</h3>
-                                <p className="text-dim" style={{marginBottom: '20px'}}>Use de 8 a 24 caracteres com maiúscula, minúscula e número.</p>
-                                <form onSubmit={handlePasswordStep3}>
-                                    <div className="form-item" style={{marginBottom: '15px'}}>
-                                        <label className="form-label">Nova senha</label>
-                                        <div className="fp-password-wrapper" style={{position: 'relative'}}>
-                                            <input 
-                                                type={showNovaSenhaField ? 'text' : 'password'} 
-                                                className="form-input"
-                                                placeholder="••••••••"
-                                                maxLength={PASSWORD_MAX_LENGTH}
-                                                value={passwordData.novaSenha}
-                                                onChange={(e) => {setPasswordData({...passwordData, novaSenha: e.target.value}); setPasswordError('');}}
-                                                required
-                                            />
-                                            <button type="button" className="fp-eye-btn" onClick={() => setShowNovaSenhaField(!showNovaSenhaField)} aria-label="Mostrar senha">
-                                                <EyeIcon open={showNovaSenhaField} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div className="form-item" style={{marginBottom: '15px'}}>
-                                        <label className="form-label">Confirmar nova senha</label>
-                                        <div className="fp-password-wrapper" style={{position: 'relative'}}>
-                                            <input 
-                                                type={showConfirmarSenhaField ? 'text' : 'password'} 
-                                                className="form-input"
-                                                placeholder="••••••••"
-                                                maxLength={PASSWORD_MAX_LENGTH}
-                                                value={passwordData.confirmarSenha}
-                                                onChange={(e) => {setPasswordData({...passwordData, confirmarSenha: e.target.value}); setPasswordError('');}}
-                                                required
-                                            />
-                                            <button type="button" className="fp-eye-btn" onClick={() => setShowConfirmarSenhaField(!showConfirmarSenhaField)} aria-label="Mostrar senha">
-                                                <EyeIcon open={showConfirmarSenhaField} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {passwordError && <span className="fp-error">{passwordError}</span>}
-                                    <div className="modal-buttons" style={{marginTop: '20px'}}>
-                                        <button type="button" className="btn-cancel" onClick={() => {setPasswordStep(2); setPasswordError('');}}>
-                                            Voltar
-                                        </button>
-                                        <button type="submit" className="btn-confirm-del" style={{background: 'var(--green-eco)'}}>
-                                            Alterar Senha
-                                        </button>
-                                    </div>
-                                </form>
-                            </>
-                        )}
-
+                            {passwordError && <span className="fp-error">{passwordError}</span>}
+                            <div className="modal-buttons" style={{marginTop: '20px'}}>
+                                <button type="button" className="btn-cancel" onClick={handleClosePasswordModal} disabled={isPasswordLoading}>
+                                    Cancelar
+                                </button>
+                                <button type="submit" className="btn-confirm-del" style={{background: 'var(--green-eco)'}} disabled={isPasswordLoading}>
+                                    {isPasswordLoading ? 'Alterando...' : 'Alterar Senha'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

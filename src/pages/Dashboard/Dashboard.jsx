@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
+import { getOrCreateEmpresaForUser } from '../../utils/empresa';
 import {
     buildLegacyLotePayload,
     buildLotePayload,
@@ -58,44 +59,6 @@ function normalizeEstadoBR(state, stateCode) {
     }
 
     return String(state || '').slice(0, 2).toUpperCase();
-}
-
-async function getOrCreateEmpresaId(usuarioData) {
-    const { data: empresaExistente, error: erroBusca } = await supabase
-        .from('empresas')
-        .select('id')
-        .eq('email', usuarioData.email)
-        .limit(1);
-
-    if (erroBusca) {
-        throw new Error(`Erro ao buscar empresa: ${erroBusca.message}`);
-    }
-
-    if (empresaExistente?.length) {
-        return empresaExistente[0].id;
-    }
-
-    const { data: novaEmpresa, error: erroCriacao } = await supabase
-        .from('empresas')
-        .insert([
-            {
-                nome: usuarioData.nome || 'Sem Nome',
-                email: usuarioData.email,
-                telefone: usuarioData.telefone || '',
-            },
-        ])
-        .select()
-        .limit(1);
-
-    if (erroCriacao) {
-        throw new Error(`Erro ao criar empresa: ${erroCriacao.message}`);
-    }
-
-    if (!novaEmpresa?.length) {
-        throw new Error('Não foi possível criar a empresa deste usuário.');
-    }
-
-    return novaEmpresa[0].id;
 }
 
 async function uploadLoteImages(files) {
@@ -335,7 +298,7 @@ export default function Dashboard() {
 
         setIsSubmitting(true);
         try {
-            const empresaId = await getOrCreateEmpresaId(usuarioData);
+            const empresaId = await getOrCreateEmpresaForUser(usuarioData);
             const fotoUrls = await uploadLoteImages(files);
 
             const payloadNovo = buildLotePayload(lote, empresaId, fotoUrls);

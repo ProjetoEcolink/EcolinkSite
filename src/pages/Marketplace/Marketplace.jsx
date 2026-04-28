@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import { getOrCreateEmpresaForUser } from '../../utils/empresa';
 import { normalizeFotoUrls, TIPOS_MATERIAIS_PADRAO } from '../../utils/loteUtils';
 import './Marketplace.css';
 
@@ -15,6 +16,8 @@ export default function Marketplace() {
     const [loading, setLoading] = useState(true);
     const [loteAtivo, setLoteAtivo] = useState(null);
     const [empresaLogadaId, setEmpresaLogadaId] = useState(null);
+    const [usuarioLogado, setUsuarioLogado] = useState(null);
+    const [comprandoLoteId, setComprandoLoteId] = useState(null);
 
     const categorias = useMemo(() => ['Todos', ...TIPOS_MATERIAIS_PADRAO], []);
 
@@ -23,16 +26,10 @@ export default function Marketplace() {
         if (!userStr) return;
 
         const usuario = JSON.parse(userStr);
+        setUsuarioLogado(usuario);
         const buscarEmpresa = async () => {
-            const { data } = await supabase
-                .from('empresas')
-                .select('id')
-                .eq('email', usuario.email)
-                .limit(1);
-
-            if (data?.length) {
-                setEmpresaLogadaId(data[0].id);
-            }
+            const id = await getOrCreateEmpresaForUser(usuario);
+            setEmpresaLogadaId(id);
         };
 
         buscarEmpresa();
@@ -95,6 +92,57 @@ export default function Marketplace() {
 
     const abrirModal = (lote) => setLoteAtivo(lote);
     const fecharModal = () => setLoteAtivo(null);
+
+    const comprarLote = async () => {
+        if (!loteAtivo) return;
+        if (!usuarioLogado) {
+            alert('Entre na sua conta para comprar um lote.');
+            return;
+        }
+
+        if (loteAtivo.empresa_id === empresaLogadaId) {
+            alert('Este lote pertence a sua conta.');
+            return;
+        }
+
+        const confirmou = window.confirm('Confirmar compra deste lote? Ele sairá do marketplace e ficará em Meus Produtos > Comprados.');
+        if (!confirmou) return;
+
+        setComprandoLoteId(loteAtivo.id);
+        try {
+            const compradorEmpresaId = empresaLogadaId || await getOrCreateEmpresaForUser(usuarioLogado);
+            const agora = new Date().toISOString();
+            const { data, error } = await supabase
+                .from('lotes')
+                .update({
+                    status: 'entregue',
+                    comprador_empresa_id: compradorEmpresaId,
+                    comprador_email: usuarioLogado.email,
+                    comprado_em: agora,
+                    finalizado_em: agora,
+                    entregue_em: agora,
+                })
+                .eq('id', loteAtivo.id)
+                .eq('status', 'disponivel')
+                .neq('empresa_id', compradorEmpresaId)
+                .select()
+                .single();
+
+            if (error) throw error;
+            if (!data) {
+                throw new Error('Este lote nao esta mais disponivel para compra.');
+            }
+
+            setEmpresaLogadaId(compradorEmpresaId);
+            setLotes((prev) => prev.filter((lote) => lote.id !== loteAtivo.id));
+            setLoteAtivo(null);
+            alert('Compra finalizada. O lote foi marcado como entregue e aparece em Meus Produtos > Comprados.');
+        } catch (error) {
+            alert(`Erro ao comprar lote: ${error.message}`);
+        } finally {
+            setComprandoLoteId(null);
+        }
+    };
 
     return (
         <div className="marketplace-page">
@@ -222,6 +270,15 @@ export default function Marketplace() {
                             )}
 
                             <div className="modal-contato-bloco">
+                                <button
+                                    type="button"
+                                    className="btn-comprar-lote"
+                                    onClick={comprarLote}
+                                    disabled={comprandoLoteId === loteAtivo.id}
+                                >
+                                    {comprandoLoteId === loteAtivo.id ? 'Finalizando compra...' : 'Comprar e finalizar lote'}
+                                </button>
+
                                 <div className="contato-revelado">
                                     <p className="contato-nome">👤 {loteAtivo.empresas?.nome || 'Anunciante'}</p>
                                     <p className="contato-dado">📞 {loteAtivo.empresas?.telefone || 'Não informado'}</p>

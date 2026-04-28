@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
@@ -69,7 +69,7 @@ export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const passos = [
+    const passos = useMemo(() => [
         {
             alvo: null,
             icone: <WelcomeIcon />,
@@ -94,21 +94,25 @@ export default function Navbar() {
             titulo: 'Perfil e Tema',
             texto: 'Edite seu perfil e use o botão de tema para alternar entre claro e escuro.',
         },
-    ];
+    ], []);
 
     useEffect(() => {
         const userStr = localStorage.getItem('usuario');
         if (userStr) {
             const user = JSON.parse(userStr);
-            setNome(user.nome ? user.nome.split(' ')[0] : 'Usuário');
+            queueMicrotask(() => {
+                setNome(user.nome ? user.nome.split(' ')[0] : 'Usuário');
 
             const tutorialVisto = localStorage.getItem('ecoLink_tutorial_v2');
-            if (!tutorialVisto) {
-                setMostrarTutorial(true);
-            }
+                if (!tutorialVisto) {
+                    setMostrarTutorial(true);
+                }
+            });
         } else {
-            setNome('');
-            setMostrarTutorial(false);
+            queueMicrotask(() => {
+                setNome('');
+                setMostrarTutorial(false);
+            });
         }
     }, [location.pathname]);
 
@@ -123,12 +127,6 @@ export default function Navbar() {
             if (!elementoAlvo) return;
 
             const rect = elementoAlvo.getBoundingClientRect();
-            setHolofote({
-                top: rect.top - 6,
-                left: rect.left - 6,
-                width: rect.width + 12,
-                height: rect.height + 12,
-            });
 
             let leftPos = rect.left + rect.width / 2 - 150;
             let seta = 'center';
@@ -141,15 +139,23 @@ export default function Navbar() {
                 seta = 'right';
             }
 
-            setPosicaoBalao({
-                top: rect.bottom + 15,
-                left: leftPos,
-                setaPosition: seta,
+            queueMicrotask(() => {
+                setHolofote({
+                    top: rect.top - 6,
+                    left: rect.left - 6,
+                    width: rect.width + 12,
+                    height: rect.height + 12,
+                });
+                setPosicaoBalao({
+                    top: rect.bottom + 15,
+                    left: leftPos,
+                    setaPosition: seta,
+                });
             });
         } else {
-            setHolofote(null);
+            queueMicrotask(() => setHolofote(null));
         }
-    }, [mostrarTutorial, passoTutorial]);
+    }, [mostrarTutorial, passoTutorial, passos]);
 
     const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
@@ -173,6 +179,13 @@ export default function Navbar() {
 
     const isActive = (path) => location.pathname === path;
     const isLogado = !!localStorage.getItem('usuario');
+    const handleLogoClick = () => {
+        if (isLogado) {
+            navigate('/marketplace');
+            return;
+        }
+        goToSection('home');
+    };
 
     const avancarTutorial = () => {
         if (passoTutorial < passos.length - 1) {
@@ -198,29 +211,30 @@ export default function Navbar() {
         <>
             <nav className="navbar">
                 <div className="nav-container">
-                    <div className="nav-logo" onClick={() => goToSection('home')} style={{ cursor: 'pointer' }}>
+                    <div className="nav-logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
                         Eco<span className="text-eco">Link</span>
                     </div>
 
                     <div className="nav-menu">
                         <div className="nav-links">
-                            <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
-                            <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
-                            <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
-                            <button onClick={() => goToSection('quem-somos')} className="nav-link-btn">Quem Somos</button>
-
-                            {isLogado && (
+                            {isLogado ? (
                                 <>
-                                    <span className="nav-divider" />
                                     <Link id="tour-marketplace" to="/marketplace" className={`nav-link-btn ${isActive('/marketplace') ? 'nav-link-active' : ''}`}>
-                                        Marketplace
+                                        Mercado
                                     </Link>
                                     <Link id="tour-painel" to="/meus-produtos" className={`nav-link-btn ${isActive('/meus-produtos') ? 'nav-link-active' : ''}`}>
-                                        Meus Produtos
+                                        Meus Lotes
                                     </Link>
                                     <Link id="tour-dashboard" to="/dashboard" className={`nav-link-btn ${isActive('/dashboard') ? 'nav-link-active' : ''}`}>
                                         Novo Lote
                                     </Link>
+                                </>
+                            ) : (
+                                <>
+                                    <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
+                                    <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
+                                    <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
+                                    <button onClick={() => goToSection('quem-somos')} className="nav-link-btn">Quem Somos</button>
                                 </>
                             )}
                         </div>

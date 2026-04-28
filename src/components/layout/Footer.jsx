@@ -1,21 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
 import './Footer.css';
 
 export default function Footer() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState(() => localStorage.getItem('pendingAuthEmail') || '');
-
-  const handleAccessSubmit = (event) => {
-    event.preventDefault();
-    const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail) return;
-
-    localStorage.setItem('pendingAuthEmail', cleanEmail);
-    const preferredPage = localStorage.getItem('ecolink-last-auth-page') === 'login' ? '/login' : '/register';
-    navigate(`${preferredPage}?email=${encodeURIComponent(cleanEmail)}`);
-  };
-
   return (
     <footer className="footer-section">
       <div className="footer-container">

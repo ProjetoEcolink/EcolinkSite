@@ -1,6 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Register.css';
+import { supabase } from '../../supabaseClient';
+import { buildLocalUserFromSupabase, persistAuthenticatedUser } from '../../utils/authUser';
 import { PASSWORD_MAX_LENGTH, validatePasswordStrength } from '../../utils/passwordPolicy';
 
 const onlyDigits = (value) => value.replace(/\D/g, '');
@@ -147,8 +149,10 @@ export default function Register() {
         const emailToUse = (emailFromQuery || emailFromStorage).trim();
 
         if (emailToUse) {
-            setFormData((prev) => ({ ...prev, email: emailToUse }));
-            localStorage.setItem('pendingAuthEmail', emailToUse);
+            queueMicrotask(() => {
+                setFormData((prev) => ({ ...prev, email: emailToUse }));
+                localStorage.setItem('pendingAuthEmail', emailToUse);
+            });
         }
     }, [location.search]);
 
@@ -303,8 +307,16 @@ export default function Register() {
         const emailKey = formData.email.trim().toLowerCase();
         const existingUser = localStorage.getItem(`ecolink-user-${emailKey}`);
         if (existingUser) {
-            mostrarErro('Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.', 'email');
-            return;
+            try {
+                const parsedUser = JSON.parse(existingUser);
+                const isSupabaseUser = parsedUser?.authProvider === 'supabase' && !parsedUser?.senha;
+                if (isSupabaseUser) {
+                    mostrarErro('Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.', 'email');
+                    return;
+                }
+            } catch {
+                localStorage.removeItem(`ecolink-user-${emailKey}`);
+            }
         }
 
         setLoading(true);
@@ -324,25 +336,65 @@ export default function Register() {
         }
 
         try {
-            const usuarioParaSalvar = {
-                id: Date.now(),
-                email: formData.email.trim(),
-                nome: formData.nome,
+            const profileData = {
+                nome: formData.nome.trim(),
                 perfil: perfil === 'business' ? 'Business' : 'User',
                 documento: documentoLimpo,
                 telefone: formData.telefone,
-                senha: formData.senha,
-                is_active: true
             };
 
+            const { data, error } = await supabase.auth.signUp({
+                email: formData.email.trim(),
+                password: formData.senha,
+                options: {
+                    data: profileData,
+                    emailRedirectTo: `${window.location.origin}/login?email=${encodeURIComponent(formData.email.trim())}`,
+                },
+            });
+
+            if (error) {
+                const message = error.message?.toLowerCase().includes('already')
+                    ? 'Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.'
+                    : error.message || 'Não foi possível criar sua conta agora.';
+                mostrarErro(message, 'email');
+                setLoading(false);
+                return;
+            }
+
+            const authUser = data?.user;
+            if (authUser?.id) {
+                await supabase
+                    .from('perfis')
+                    .upsert({
+                        id: authUser.id,
+                        email: authUser.email,
+                        tipo_perfil: profileData.perfil,
+                        nome: profileData.nome,
+                        documento: profileData.documento,
+                        telefone: profileData.telefone,
+                    }, { onConflict: 'id' });
+            }
+
+            const usuarioParaSalvar = authUser
+                ? buildLocalUserFromSupabase(authUser, profileData)
+                : {
+                    id: null,
+                    email: formData.email.trim(),
+                    ...profileData,
+                    authProvider: 'supabase',
+                };
+
             localStorage.setItem(`ecolink-user-${emailKey}`, JSON.stringify(usuarioParaSalvar));
-            localStorage.setItem(`ecolink-password-${emailKey}`, formData.senha);
+            localStorage.removeItem(`ecolink-password-${emailKey}`);
             localStorage.setItem('pendingAuthEmail', formData.email.trim());
-            localStorage.setItem('usuario', JSON.stringify(usuarioParaSalvar));
+
+            if (data?.session) {
+                persistAuthenticatedUser(usuarioParaSalvar);
+            }
 
             setLoading(false);
             setShowSuccessModal(true);
-        } catch (err) {
+        } catch {
             mostrarErro('Erro inesperado. Tente novamente.');
             setLoading(false);
         }

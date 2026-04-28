@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../supabaseClient';
+import { getOrCreateEmpresaForUser } from '../../utils/empresa';
 import {
     buildLegacyLotePayload,
     buildLotePayload,
@@ -26,6 +27,7 @@ export default function MyProducts() {
     const [editingLote, setEditingLote] = useState(null);
     const [salvandoEdicao, setSalvandoEdicao] = useState(false);
     const [deletando, setDeletando] = useState(null);
+    const [abaAtiva, setAbaAtiva] = useState('anunciados');
 
     const categorias = useMemo(() => TIPOS_MATERIAIS_PADRAO, []);
 
@@ -38,18 +40,12 @@ export default function MyProducts() {
 
         const usuario = JSON.parse(userStr);
         const init = async () => {
-            const { data } = await supabase
-                .from('empresas')
-                .select('id')
-                .eq('email', usuario.email)
-                .limit(1);
-
-            if (!data?.length) {
+            try {
+                const id = await getOrCreateEmpresaForUser(usuario);
+                setEmpresaId(id);
+            } catch {
                 setLoading(false);
-                return;
             }
-
-            setEmpresaId(data[0].id);
         };
 
         init();
@@ -59,21 +55,26 @@ export default function MyProducts() {
         if (!empresaId) return;
         buscarLotesProprios();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [empresaId]);
+    }, [empresaId, abaAtiva]);
 
     const buscarLotesProprios = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            let query = supabase
                 .from('lotes')
                 .select('*')
-                .eq('empresa_id', empresaId)
                 .order('created_at', { ascending: false });
+
+            query = abaAtiva === 'comprados'
+                ? query.eq('comprador_empresa_id', empresaId)
+                : query.eq('empresa_id', empresaId);
+
+            const { data, error } = await query;
 
             if (error) throw error;
             setLotes(data || []);
         } catch (error) {
-            alert(`Erro ao carregar seus produtos: ${error.message}`);
+            alert(`Erro ao carregar seus lotes: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -183,14 +184,22 @@ export default function MyProducts() {
     return (
         <div className="marketplace-page">
             <header className="marketplace-header">
-                <h2>Meus <span className="text-highlight">Produtos</span></h2>
-                <p>Gerencie seus próprios lotes: editar, atualizar status e remover.</p>
+                <h2>Meus <span className="text-highlight">Lotes</span></h2>
+                <p>Gerencie seus lotes anunciados e acompanhe os lotes comprados.</p>
+                <div className="my-products-tabs">
+                    <button type="button" className={`my-products-tab ${abaAtiva === 'anunciados' ? 'active' : ''}`} onClick={() => setAbaAtiva('anunciados')}>
+                        Anunciados
+                    </button>
+                    <button type="button" className={`my-products-tab ${abaAtiva === 'comprados' ? 'active' : ''}`} onClick={() => setAbaAtiva('comprados')}>
+                        Comprados
+                    </button>
+                </div>
             </header>
 
             {loading ? (
-                <div className="marketplace-status"><p>Carregando seus produtos...</p></div>
+                <div className="marketplace-status"><p>Carregando seus lotes...</p></div>
             ) : lotes.length === 0 ? (
-                <div className="marketplace-status"><p>Você ainda não publicou lotes.</p></div>
+                <div className="marketplace-status"><p>{abaAtiva === 'comprados' ? 'Voce ainda nao comprou lotes.' : 'Voce ainda nao publicou lotes.'}</p></div>
             ) : (
                 <div className="marketplace-grid">
                     {lotes.map((lote) => {
@@ -218,10 +227,16 @@ export default function MyProducts() {
                                 </div>
 
                                 <div className="my-products-actions">
-                                    <button type="button" className="btn-manage" onClick={() => abrirEditor(lote)}>Editar</button>
-                                    <button type="button" className="btn-manage btn-manage--danger" onClick={() => removerLote(lote)} disabled={deletando === lote.id}>
-                                        {deletando === lote.id ? 'Removendo...' : 'Remover'}
-                                    </button>
+                                    {abaAtiva === 'anunciados' ? (
+                                        <>
+                                            <button type="button" className="btn-manage" onClick={() => abrirEditor(lote)}>Editar</button>
+                                            <button type="button" className="btn-manage btn-manage--danger" onClick={() => removerLote(lote)} disabled={deletando === lote.id}>
+                                                {deletando === lote.id ? 'Removendo...' : 'Remover'}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button type="button" className="btn-manage" onClick={() => setLoteAtivo(lote)}>Ver lote entregue</button>
+                                    )}
                                 </div>
                             </article>
                         );
