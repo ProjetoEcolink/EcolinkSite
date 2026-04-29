@@ -1,16 +1,16 @@
 export const MAX_FOTOS_LOTE = 5;
 
 export const TIPOS_MATERIAIS_PADRAO = [
-    'Notebook',
-    'Celular',
-    'Monitor',
-    'Desktop',
-    'Servidor',
-    'Impressora',
-    'Periféricos',
-    'Baterias',
-    'Cabos',
-    'Misto',
+  'Baterias',
+  'Celulares',
+  'Computadores',
+  'Monitores',
+  'Placas de Circuito',
+  'Impressoras',
+  'Cabos e Fios',
+  'Pilhas',
+  'Televisores',
+  'Tablets',
 ];
 
 export function sanitizePesoInput(value) {

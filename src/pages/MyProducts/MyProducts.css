@@ -1,3 +1,219 @@
+/* Página principal */
+.my-products-page {
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+    padding-top: 4.5rem;
+}
+
+/* Header com stats */
+.my-products-header {
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--ui-border);
+    padding: 1.5rem 2rem;
+}
+
+.my-products-header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.my-products-title-area h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.3rem;
+}
+
+.my-products-title-area p {
+    font-size: 0.9rem;
+    color: var(--text-description);
+    margin: 0;
+}
+
+/* Stats cards */
+.my-products-stats {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.stat-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--ui-border);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: var(--text-description);
+    margin-top: 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-sold {
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.stat-sold .stat-value {
+    color: #8b5cf6;
+}
+
+.stat-bought {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.stat-bought .stat-value {
+    color: #3b82f6;
+}
+
+/* Actions bar */
+.my-products-actions-bar {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--ui-border);
+    background: var(--bg-secondary);
+}
+
+.btn-create-lote {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1.2rem;
+    background: #00b36b;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background 0.15s ease;
+}
+
+.btn-create-lote:hover {
+    background: #009a5c;
+}
+
+/* Compatibilidade visual com Marketplace */
+.marketplace-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 220px);
+    gap: 1rem;
+    justify-content: start;
+}
+
+.lote-card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--ui-border);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: box-shadow 0.18s ease, border-color 0.18s ease;
+    outline: none;
+    width: 100%;
+}
+
+.lote-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    border-color: #00b36b;
+}
+
+.lote-image-placeholder {
+    position: relative;
+    height: 160px;
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--ui-border);
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lote-foto {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.lote-card:hover .lote-foto {
+    transform: scale(1.04);
+}
+
+.image-icon {
+    font-size: 2rem;
+    opacity: 0.12;
+}
+
+.categoria-badge {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    background: #00b36b;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.63rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1.5;
+}
+
+.lote-info {
+    padding: 0.85rem 0.9rem 0.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.lote-titulo {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.lote-meta {
+    font-size: 0.75rem;
+    color: var(--text-description);
+    display: flex;
+    gap: 0.7rem;
+    margin-bottom: 0.2rem;
+}
+
+.lote-descricao {
+    font-size: 0.75rem;
+    color: var(--text-description);
+    line-height: 1.45;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
 .my-products-tabs {
     display: inline-flex;
     gap: 0.4rem;
@@ -82,5 +298,34 @@
 
     .edit-actions {
         flex-direction: column;
+    }
+}
+
+@media (max-width: 600px) {
+    .my-products-header {
+        padding: 1rem;
+    }
+
+    .my-products-header-content {
+        flex-direction: column;
+    }
+
+    .my-products-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .stat-card {
+        flex: 1;
+        min-width: auto;
+    }
+
+    .my-products-actions-bar {
+        padding: 1rem;
+    }
+
+    .btn-create-lote {
+        width: 100%;
+        justify-content: center;
     }
 }

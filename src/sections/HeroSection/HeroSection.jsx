@@ -39,13 +39,7 @@ export default function HeroSection() {
                 <p className="hero-subtitle">
                     Transforme hardware obsoleto em receita e garanta o compliance ESG da sua empresa de ponta a ponta.
                 </p>
-
-                <div className="hero-buttons">
-                    <button className="btn-primary" onClick={() => navigate('/register')}>
-                        Quero meu acesso
-                    </button>
-                </div>
-
+            
                 <div className="hero-trust">
                     <span>✓ Emissão de MTR</span>
                     <span className="trust-dot">•</span>

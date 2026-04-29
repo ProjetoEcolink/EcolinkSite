@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { getOrCreateEmpresaForUser } from '../../utils/empresa';
 import {
@@ -19,9 +20,26 @@ function loteLocalLabel(lote) {
     return 'Local não informado';
 }
 
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function getStatusBadge(status) {
+    const statusMap = {
+        disponivel: { label: 'Disponível', color: '#00b36b' },
+        entregue: { label: 'Entregue', color: '#3b82f6' },
+        vendido: { label: 'Vendido', color: '#8b5cf6' },
+    };
+    const s = statusMap[status] || { label: status, color: '#6b7280' };
+    return s;
+}
+
 export default function MyProducts() {
     const [empresaId, setEmpresaId] = useState(null);
     const [lotes, setLotes] = useState([]);
+    const [lotesComprados, setLotesComprados] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loteAtivo, setLoteAtivo] = useState(null);
     const [editingLote, setEditingLote] = useState(null);
@@ -30,6 +48,11 @@ export default function MyProducts() {
     const [abaAtiva, setAbaAtiva] = useState('anunciados');
 
     const categorias = useMemo(() => TIPOS_MATERIAIS_PADRAO, []);
+
+    // Contadores
+    const totalAnunciados = lotes.filter(l => l.status !== 'entregue').length;
+    const totalVendidos = lotes.filter(l => l.status === 'entregue').length;
+    const totalComprados = lotesComprados.length;
 
     useEffect(() => {
         const userStr = localStorage.getItem('usuario');
@@ -54,22 +77,18 @@ export default function MyProducts() {
     useEffect(() => {
         if (!empresaId) return;
         buscarLotesProprios();
+        buscarLotesComprados();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [empresaId, abaAtiva]);
 
     const buscarLotesProprios = async () => {
         setLoading(true);
         try {
-            let query = supabase
+            const { data, error } = await supabase
                 .from('lotes')
                 .select('*')
+                .eq('empresa_id', empresaId)
                 .order('created_at', { ascending: false });
-
-            query = abaAtiva === 'comprados'
-                ? query.eq('comprador_empresa_id', empresaId)
-                : query.eq('empresa_id', empresaId);
-
-            const { data, error } = await query;
 
             if (error) throw error;
             setLotes(data || []);
@@ -78,6 +97,33 @@ export default function MyProducts() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const buscarLotesComprados = async () => {
+        try {
+            const userStr = localStorage.getItem('usuario');
+            let email = '';
+            if (userStr) {
+                try {
+                    email = JSON.parse(userStr).email;
+                } catch {}
+            }
+            const { data, error } = await supabase
+                .from('lotes')
+                .select('*')
+                .eq('status', 'entregue')
+                .eq('comprador_email', email)
+                .order('comprado_em', { ascending: false });
+
+            if (error) throw error;
+            setLotesComprados(data || []);
+        } catch (error) {
+            console.error('Erro ao buscar lotes comprados:', error.message);
+        }
+    };
+
+    const getLotesAtuais = () => {
+        return abaAtiva === 'comprados' ? lotesComprados : lotes;
     };
 
     const abrirEditor = (lote) => {
@@ -181,28 +227,47 @@ export default function MyProducts() {
         }
     };
 
+    const lotesAtuais = getLotesAtuais();
+
     return (
-        <div className="marketplace-page">
-            <header className="marketplace-header">
-                <h2>Meus <span className="text-highlight">Lotes</span></h2>
-                <p>Gerencie seus lotes anunciados e acompanhe os lotes comprados.</p>
+        <div className="my-products-page">
+            <header className="my-products-header">
+                <div className="my-products-header-content">
+                    <div className="my-products-title-area">
+                        <h2>Meus <span className="text-highlight">Lotes</span></h2>
+                        <p>Gerencie seus lotes anunciados e acompanhe suas compras.</p>
+                    </div>
+                    <div className="my-products-stats">
+                        <div className="stat-card">
+                            <span className="stat-value">{totalAnunciados}</span>
+                            <span className="stat-label">Anunciados</span>
+                        </div>
+                        <div className="stat-card stat-sold">
+                            <span className="stat-value">{totalVendidos}</span>
+                            <span className="stat-label">Vendidos</span>
+                        </div>
+                        <div className="stat-card stat-bought">
+                            <span className="stat-value">{totalComprados}</span>
+                            <span className="stat-label">Comprados</span>
+                        </div>
+                    </div>
+                </div>
                 <div className="my-products-tabs">
                     <button type="button" className={`my-products-tab ${abaAtiva === 'anunciados' ? 'active' : ''}`} onClick={() => setAbaAtiva('anunciados')}>
-                        Anunciados
+                        Anunciados ({totalAnunciados})
                     </button>
                     <button type="button" className={`my-products-tab ${abaAtiva === 'comprados' ? 'active' : ''}`} onClick={() => setAbaAtiva('comprados')}>
-                        Comprados
+                        Comprados ({totalComprados})
                     </button>
                 </div>
             </header>
-
             {loading ? (
                 <div className="marketplace-status"><p>Carregando seus lotes...</p></div>
-            ) : lotes.length === 0 ? (
-                <div className="marketplace-status"><p>{abaAtiva === 'comprados' ? 'Voce ainda nao comprou lotes.' : 'Voce ainda nao publicou lotes.'}</p></div>
+            ) : lotesAtuais.length === 0 ? (
+                <div className="marketplace-status"><p>{abaAtiva === 'comprados' ? 'Você ainda não comprou lotes.' : 'Você ainda não publicou lotes.'}</p></div>
             ) : (
                 <div className="marketplace-grid">
-                    {lotes.map((lote) => {
+                    {lotesAtuais.map((lote) => {
                         const fotoUrls = normalizeFotoUrls(lote);
                         const fotoPrincipal = fotoUrls[0] || null;
 
