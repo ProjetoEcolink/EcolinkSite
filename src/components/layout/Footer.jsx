@@ -1,20 +1,51 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './Footer.css';
 
 export default function Footer() {
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // O seu e-mail de suporte real
   const emailSuporte = "juankonradoobregon2007@gmail.com";
 
-  // URL mágica do Gmail Web (Passamos o email e o assunto pela URL)
+  // URL mágica do Gmail Web
   const gmailUrlSuporte = `https://mail.google.com/mail/?view=cm&fs=1&to=${emailSuporte}&su=Dúvida%20sobre%20o%20EcoLink`;
   const gmailUrlErro = `https://mail.google.com/mail/?view=cm&fs=1&to=${emailSuporte}&su=Reportar%20um%20Erro%20no%20EcoLink`;
 
-  // Função que copia o e-mail (O Plano C)
-  const handleCopiarEmail = (e) => {
+  // Monitora mudanças no hash da URL para rolar a tela após o carregamento da página
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        // Um pequeno delay garante que a página já renderizou os elementos
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [location]);
+
+  // Função que gerencia o clique nos links da Plataforma
+  const handleScroll = (e, hash) => {
     e.preventDefault();
-    navigator.clipboard.writeText(emailSuporte);
-    alert(`O e-mail ${emailSuporte} foi copiado!`);
+    
+    const rotaDaLandingPage = '/home'; 
+
+    if (location.pathname === rotaDaLandingPage) {
+      // Se já está na página certa, só rola a tela suavemente
+      const id = hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        console.warn(`Elemento com id="${id}" não encontrado nesta página.`);
+      }
+    } else {
+      // Se está em outra página (ex: /meus-produtos), navega pra lá adicionando o hash
+      navigate(`${rotaDaLandingPage}${hash}`);
+    }
   };
 
   return (
@@ -37,25 +68,23 @@ export default function Footer() {
           {/* Coluna 2: Links Rápidos */}
           <div className="footer-links-group">
             <h4 className="footer-links-title">Plataforma</h4>
-            <a href="/#o-problema">O Problema</a>
-            <a href="/#funcionalidades">Como Funciona</a>
-            <a href="/#quem-somos">Quem Somos</a>
+            {/* Agora usando a função handleScroll com botões ou links interceptados */}
+            <a href="/#o-problema" onClick={(e) => handleScroll(e, '#o-problema')}>O Problema</a>
+            <a href="/#funcionalidades" onClick={(e) => handleScroll(e, '#funcionalidades')}>Como Funciona</a>
+            <a href="/#quem-somos" onClick={(e) => handleScroll(e, '#quem-somos')}>Quem Somos</a>
           </div>
 
           {/* Coluna 3: Suporte */}
           <div className="footer-links-group">
             <h4 className="footer-links-title">Precisa de Ajuda?</h4>
             
-            {/* Opção 1: Abre direto no Gmail Web (A que você pediu!) */}
             <a href={gmailUrlSuporte} target="_blank" rel="noopener noreferrer">
               Tirar uma dúvida
             </a>
 
-            {/* Opção 2: Tenta abrir App Nativo do celular/PC (O mailto original) */}
             <a href={gmailUrlErro} target="_blank" rel="noopener noreferrer">
               Reportar erro 
             </a>
-                        
           </div>
           
         </div>
