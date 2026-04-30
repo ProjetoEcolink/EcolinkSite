@@ -22,7 +22,7 @@ import Marketplace from './pages/Marketplace/Marketplace';
 import Dashboard from './pages/Dashboard/Dashboard'; // CAMINHO CORRIGIDO AQUI
 import MyProducts from './pages/MyProducts/MyProducts';
 
-// Landing Page
+// Landing Page (Página Institucional)
 const LandingPage = () => (
     <>
         <section id="home"><HeroSection /></section>
@@ -58,20 +58,23 @@ const LayoutHandler = ({ children }) => {
 function App() {
     return (
         <BrowserRouter>
-                <ScrollToTop />
+            <ScrollToTop />
             <LayoutHandler>
                 <Routes>
-                    {/* Raiz e Home */}
-                    <Route path="/" element={<LandingPage />} />
+                    {/* A MÁGICA ACONTECE AQUI */}
+                    {/* 1. Raiz do site agora é o Marketplace! */}
+                    <Route path="/" element={<Marketplace />} />
+
+                    {/* 2. Landing Page Institucional movida para /home */}
                     <Route path="/home" element={<LandingPage />} />
+
+                    {/* 3. Redireciona links antigos de /marketplace para a raiz (evita páginas duplicadas) */}
+                    <Route path="/marketplace" element={<Navigate to="/" replace />} />
 
                     {/* Auth */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/esqueci-senha" element={<ForgotPassword />} />
-
-                    {/* Público */}
-                    <Route path="/marketplace" element={<Marketplace />} />
 
                     {/* Protegido (Só acessa se logado) */}
                     <Route path="/dashboard" element={
@@ -85,7 +88,7 @@ function App() {
                             <MyProducts />
                         </ProtectedRoute>
                     } />
-                    
+
                     <Route path="/profile" element={
                         <ProtectedRoute>
                             <Profile />

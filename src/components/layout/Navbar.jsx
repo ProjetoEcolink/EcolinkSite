@@ -50,6 +50,14 @@ const PackageIcon = () => (
     </svg>
 );
 
+const AddIcon = () => (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+);
+
 const SettingsIcon = () => (
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="3"/>
@@ -89,6 +97,12 @@ export default function Navbar() {
             texto: 'Acompanhe, edite e remova seus próprios lotes na tela de Meus Produtos.',
         },
         {
+            alvo: 'tour-dashboard',
+            icone: <AddIcon />,
+            titulo: 'Novo Lote',
+            texto: 'Cadastre novos materiais para venda de forma rápida e prática nesta área.',
+        },
+        {
             alvo: 'tour-perfil-tema',
             icone: <SettingsIcon />,
             titulo: 'Perfil e Tema',
@@ -103,7 +117,7 @@ export default function Navbar() {
             queueMicrotask(() => {
                 setNome(user.nome ? user.nome.split(' ')[0] : 'Usuário');
 
-            const tutorialVisto = localStorage.getItem('ecoLink_tutorial_v2');
+                const tutorialVisto = localStorage.getItem('ecoLink_tutorial_v2');
                 if (!tutorialVisto) {
                     setMostrarTutorial(true);
                 }
@@ -159,33 +173,11 @@ export default function Navbar() {
 
     const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
-    const goToSection = (section) => {
-        if (location.pathname !== '/home' && location.pathname !== '/') {
-            navigate('/home');
-            setTimeout(() => {
-                const element = document.getElementById(section);
-                if (element) {
-                    element.scrollIntoView({ behavior: 'smooth' });
-                }
-            }, 150);
-            return;
-        }
-
-        const element = document.getElementById(section);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
-
     const isActive = (path) => location.pathname === path;
     const isLogado = !!localStorage.getItem('usuario');
-    const handleLogoClick = () => {
-        if (isLogado) {
-            navigate('/marketplace');
-            return;
-        }
-        goToSection('home');
-    };
+
+    // Ao clicar no logo, manda direto para a raiz (Marketplace)
+    const handleLogoClick = () => navigate('/');
 
     const avancarTutorial = () => {
         if (passoTutorial < passos.length - 1) {
@@ -204,7 +196,7 @@ export default function Navbar() {
     const confirmarLogout = () => {
         localStorage.removeItem('usuario');
         setMostrarModalLogout(false);
-        navigate('/home');
+        navigate('/'); // Após sair, volta pra vitrine
     };
 
     return (
@@ -217,26 +209,32 @@ export default function Navbar() {
 
                     <div className="nav-menu">
                         <div className="nav-links">
-                            {isLogado ? (
-                                <>
-                                    <Link id="tour-marketplace" to="/marketplace" className={`nav-link-btn ${isActive('/marketplace') ? 'nav-link-active' : ''}`}>
-                                        Mercado
-                                    </Link>
-                                    <Link id="tour-painel" to="/meus-produtos" className={`nav-link-btn ${isActive('/meus-produtos') ? 'nav-link-active' : ''}`}>
-                                        Meus Lotes
-                                    </Link>
-                                    <Link id="tour-dashboard" to="/dashboard" className={`nav-link-btn ${isActive('/dashboard') ? 'nav-link-active' : ''}`}>
-                                        Novo Lote
-                                    </Link>
-                                </>
-                            ) : (
-                                <>
-                                    <button onClick={() => goToSection('home')} className="nav-link-btn">Home</button>
-                                    <button onClick={() => goToSection('o-problema')} className="nav-link-btn">O Problema</button>
-                                    <button onClick={() => goToSection('funcionalidades')} className="nav-link-btn">Funcionalidades</button>
-                                    <button onClick={() => goToSection('quem-somos')} className="nav-link-btn">Quem Somos</button>
-                                </>
-                            )}
+                            {/* Mercado: Aponta para a raiz (/) e fica ativo se for a home ou /marketplace */}
+                            <Link 
+                                id="tour-marketplace" 
+                                to="/" 
+                                className={`nav-link-btn ${isActive('/') || isActive('/marketplace') ? 'nav-link-active' : ''}`}
+                            >
+                                Mercado
+                            </Link>
+
+                            {/* Meus Lotes: Se logado, vai pra tela certa. Se não, manda pro Login! */}
+                            <Link 
+                                id="tour-painel" 
+                                to={isLogado ? "/meus-produtos" : "/login"} 
+                                className={`nav-link-btn ${isActive('/meus-produtos') ? 'nav-link-active' : ''}`}
+                            >
+                                Meus Lotes
+                            </Link>
+
+                            {/* Novo Lote: Se logado, vai pro Painel. Se não, manda pro Login! */}
+                            <Link 
+                                id="tour-dashboard" 
+                                to={isLogado ? "/dashboard" : "/login"} 
+                                className={`nav-link-btn ${isActive('/dashboard') ? 'nav-link-active' : ''}`}
+                            >
+                                Novo Lote
+                            </Link>
                         </div>
                     </div>
 
@@ -264,6 +262,7 @@ export default function Navbar() {
                 </div>
             </nav>
 
+            {/* TUTORIAL E MODAL DE LOGOUT MANTIDOS INTACTOS ABAIXO */}
             {mostrarTutorial && (
                 <div className={`tour-backdrop ${passos[passoTutorial].alvo ? 'tour-backdrop-transparente' : ''}`}>
                     {holofote && (

@@ -458,7 +458,7 @@ export default function Register() {
             <header className="auth-topbar">
                 <button
                     className="auth-back-btn"
-                    onClick={() => navigate('/home')}
+                    onClick={() => navigate('/')}
                     title="Voltar"
                     aria-label="Voltar"
                     type="button"

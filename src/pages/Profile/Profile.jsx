@@ -188,7 +188,7 @@ export default function Profile() {
     const handleLogout = async () => {
         clearAuthenticatedUser();
         await supabase.auth.signOut();
-        navigate('/home');
+        navigate('/');
         window.location.reload();
     };
 
@@ -248,7 +248,7 @@ export default function Profile() {
             clearAuthenticatedUser();
             await supabase.auth.signOut();
             setShowDeleteConfirmationEmail(false);
-            navigate('/home');
+            navigate('/');
             window.location.reload();
         } catch (error) {
             alert(`Erro ao excluir conta: ${error.message}`);

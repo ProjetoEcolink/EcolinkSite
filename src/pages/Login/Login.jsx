@@ -164,7 +164,7 @@ export default function Login() {
             const localResult = tryLocalLogin();
             if (localResult.ok) {
                 setLoading(false);
-                navigate('/home');
+                navigate('/');
                 return;
             }
 
@@ -179,7 +179,7 @@ export default function Login() {
         const usuarioParaSalvar = buildLocalUserFromSupabase(data.user);
         persistAuthenticatedUser(usuarioParaSalvar);
         setLoading(false);
-        navigate('/home');
+        navigate('/');
     };
     return (
         <div className="auth-page">
@@ -217,7 +217,7 @@ export default function Login() {
             <header className="auth-topbar">
                 <button
                     className="auth-back-btn"
-                    onClick={() => navigate('/home')}
+                    onClick={() => navigate('/')}
                     title="Voltar"
                     aria-label="Voltar"
                     type="button"
@@ -234,7 +234,7 @@ export default function Login() {
             </header>
 
             <main className="auth-content">
-                <Link to="/home" className="auth-brand-link" aria-label="Ir para a home">
+                <Link to="/" className="auth-brand-link" aria-label="Ir para a home">
                     <div className="auth-topbar-logo auth-page-logo">
                         Eco<span className="text-eco">Link</span>
                     </div>

@@ -40,7 +40,7 @@ export default function Marketplace() {
     useEffect(() => {
         buscarLotes();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoriaAtiva, empresaLogadaId]);
+    }, [categoriaAtiva, empresaLogadaId, busca]); // Adicionado 'busca' nas dependências para filtrar em tempo real
 
     useEffect(() => {
         const handleKey = (e) => e.key === 'Escape' && fecharModal();
@@ -70,20 +70,29 @@ export default function Marketplace() {
 
             const filtrados = (data || []).filter((lote) => {
 
-                // RESTAURADO: Esconde os lotes do próprio usuário logado da vitrine!
+                // Esconde os lotes do próprio usuário logado da vitrine
                 if (empresaLogadaId && lote.empresa_id === empresaLogadaId) return false;
 
+                // Filtro por Categoria Ativa (Botões)
                 if (categoriaAtiva !== 'Todos') {
                     const cat = normaliza(lote.tipo_material) || normaliza(lote.categoria);
                     if (cat !== categoriaAtivaNorm) return false;
                 }
 
+                // Nova Lógica de Busca Aprimorada
                 if (busca.trim()) {
                     const buscaNorm = normaliza(busca);
                     const titulo = normaliza(lote.titulo);
-                    const descricao = normaliza(lote.descricao_resumida) + ' ' + normaliza(lote.descricao);
+                    const descricao = normaliza(lote.descricao_resumida) + ' ' + normaliza(lote.descricao) + ' ' + normaliza(lote.descricao_completa);
                     const empresa = normaliza(lote.empresas?.nome);
-                    if (!titulo.includes(buscaNorm) && !descricao.includes(buscaNorm) && !empresa.includes(buscaNorm)) {
+                    const categoriaBusca = normaliza(lote.tipo_material) + ' ' + normaliza(lote.categoria);
+
+                    if (
+                        !titulo.includes(buscaNorm) && 
+                        !descricao.includes(buscaNorm) && 
+                        !empresa.includes(buscaNorm) && 
+                        !categoriaBusca.includes(buscaNorm)
+                    ) {
                         return false;
                     }
                 }
@@ -184,7 +193,7 @@ export default function Marketplace() {
                     <input
                         type="text"
                         className="marketplace-search"
-                        placeholder="Buscar lotes por nome, descrição ou empresa..."
+                        placeholder="Buscar lotes..."
                         value={busca}
                         onChange={e => setBusca(e.target.value)}
                         style={{

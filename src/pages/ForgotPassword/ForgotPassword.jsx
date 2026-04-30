@@ -267,7 +267,7 @@ export default function ForgotPassword() {
     return (
         <div className="auth-page">
             <header className="auth-topbar">
-                <Link to="/home" style={{ textDecoration: 'none' }}>
+                <Link to="/" style={{ textDecoration: 'none' }}>
                     <div className="auth-topbar-logo">Eco<span className="text-eco">Link</span></div>
                 </Link>
                 <button onClick={toggleTheme} aria-label="Mudar tema" type="button" className="auth-theme-toggle">
@@ -422,7 +422,7 @@ export default function ForgotPassword() {
                         <button className="btn-submit fp-success-btn" onClick={() => navigate('/login')}>
                             Ir para o login
                         </button>
-                        <Link to="/home" className="auth-back-link" style={{ marginTop: '0.5rem' }}>
+                        <Link to="/" className="auth-back-link" style={{ marginTop: '0.5rem' }}>
                             Voltar para home
                         </Link>
                     </div>
