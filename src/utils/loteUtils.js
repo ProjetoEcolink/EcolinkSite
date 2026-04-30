@@ -1,16 +1,16 @@
 export const MAX_FOTOS_LOTE = 5;
 
 export const TIPOS_MATERIAIS_PADRAO = [
-  'Baterias',
-  'Celulares',
-  'Computadores',
-  'Monitores',
-  'Placas de Circuito',
-  'Impressoras',
-  'Cabos e Fios',
-  'Pilhas',
-  'Televisores',
-  'Tablets',
+    'Baterias',
+    'Celulares',
+    'Computadores',
+    'Monitores',
+    'Placas de Circuito',
+    'Impressoras',
+    'Cabos e Fios',
+    'Pilhas',
+    'Televisores',
+    'Tablets',
 ];
 
 export function sanitizePesoInput(value) {
@@ -38,23 +38,32 @@ export function normalizeMateriaisLote(value) {
 export function normalizeFotoUrls(lote) {
     if (!lote) return [];
 
-    const fromArray = lote.fotos_urls;
-    if (Array.isArray(fromArray)) {
-        return fromArray.filter(Boolean);
-    }
-
-    if (typeof fromArray === 'string') {
-        try {
-            const parsed = JSON.parse(fromArray);
-            if (Array.isArray(parsed)) {
-                return parsed.filter(Boolean);
-            }
-        } catch {
-            // Intencional: fallback para foto_url
+    // TENTATIVA 1: Busca na coluna nova (se ela existir no futuro)
+    if (lote.fotos_urls) {
+        if (Array.isArray(lote.fotos_urls)) return lote.fotos_urls.filter(Boolean);
+        if (typeof lote.fotos_urls === 'string') {
+            try {
+                const parsed = JSON.parse(lote.fotos_urls);
+                if (Array.isArray(parsed)) return parsed.filter(Boolean);
+            } catch { }
         }
     }
 
-    return lote.foto_url ? [lote.foto_url] : [];
+    // TENTATIVA 2: Busca na coluna antiga e tenta ler como se fosse uma lista de fotos
+    if (lote.foto_url) {
+        if (typeof lote.foto_url === 'string') {
+            try {
+                // Tenta ver se é um JSON disfarçado (Array de fotos)
+                const parsed = JSON.parse(lote.foto_url);
+                if (Array.isArray(parsed)) return parsed.filter(Boolean);
+            } catch {
+                // Se der erro no JSON, é porque é um lote velho com apenas 1 URL normal
+                return [lote.foto_url];
+            }
+        }
+    }
+
+    return [];
 }
 
 export function buildLotePayload(lote, empresaId, fotoUrls) {
@@ -78,8 +87,8 @@ export function buildLotePayload(lote, empresaId, fotoUrls) {
         descricao_resumida: lote.descricao_resumida || null,
         descricao_completa: descricaoCompleta || null,
         descricao: descricaoCompleta || null,
-        fotos_urls: fotoUrls,
-        foto_url: fotoUrls[0] || null,
+        fotos_urls: fotoUrls, // Tenta salvar na coluna nova
+        foto_url: fotoUrls && fotoUrls.length > 0 ? JSON.stringify(fotoUrls) : null, // MÁGICA: Salva a lista inteira como texto aqui!
         status: lote.status || 'disponivel',
         created_at: new Date().toISOString(),
     };
@@ -98,7 +107,7 @@ export function buildLegacyLotePayload(lote, empresaId, fotoUrls) {
         cidade: lote.cidade || null,
         estado: lote.estado || null,
         descricao: descricaoCompleta,
-        foto_url: fotoUrls[0] || null,
+        foto_url: fotoUrls && fotoUrls.length > 0 ? JSON.stringify(fotoUrls) : null, // MÁGICA: Não joga mais as fotos fora! Salva todas como texto.
         status: lote.status || 'disponivel',
         created_at: new Date().toISOString(),
     };

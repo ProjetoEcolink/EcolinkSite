@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { getOrCreateEmpresaForUser } from '../../utils/empresa';
@@ -47,20 +47,15 @@ export default function MyProducts() {
     const [deletando, setDeletando] = useState(null);
     const [abaAtiva, setAbaAtiva] = useState('anunciados');
 
+    // NOVO: Estado do Carrossel
+    const [imagemAtualIndex, setImagemAtualIndex] = useState(0);
+
     const categorias = useMemo(() => TIPOS_MATERIAIS_PADRAO, []);
 
     // Contadores
     const totalAnunciados = lotes.filter(l => l.status !== 'entregue').length;
     const totalVendidos = lotes.filter(l => l.status === 'entregue').length;
     const totalComprados = lotesComprados.length;
-
-    const galeriaRef = useRef(null);
-    const scrollGaleria = (direcao) => {
-        if (galeriaRef.current) {
-            const scrollAmount = galeriaRef.current.clientWidth;
-            galeriaRef.current.scrollBy({ left: direcao === 'esq' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
-        }
-    };
 
     useEffect(() => {
         const userStr = localStorage.getItem('usuario');
@@ -132,6 +127,16 @@ export default function MyProducts() {
 
     const getLotesAtuais = () => {
         return abaAtiva === 'comprados' ? lotesComprados : lotes;
+    };
+
+    // NOVO: Função para abrir o modal visual e zerar o carrossel
+    const abrirModalVisualizacao = (lote) => {
+        setLoteAtivo(lote);
+        setImagemAtualIndex(0);
+    };
+
+    const fecharModalVisualizacao = () => {
+        setLoteAtivo(null);
     };
 
     const abrirEditor = (lote) => {
@@ -235,10 +240,24 @@ export default function MyProducts() {
         }
     };
 
+    // Funções do Carrossel
+    const fotosModal = loteAtivo ? normalizeFotoUrls(loteAtivo) : [];
+    
+    const prevImage = (e) => {
+        e.stopPropagation();
+        setImagemAtualIndex((prev) => (prev === 0 ? fotosModal.length - 1 : prev - 1));
+    };
+
+    const nextImage = (e) => {
+        e.stopPropagation();
+        setImagemAtualIndex((prev) => (prev === fotosModal.length - 1 ? 0 : prev + 1));
+    };
+
     const lotesAtuais = getLotesAtuais();
 
     return (
         <div className="my-products-page">
+            {/* O CSS injetado foi limpo das antigas galerias horizontais */}
             <style>{`
                 .my-products-page {
                     max-width: 1320px;
@@ -252,25 +271,6 @@ export default function MyProducts() {
                         padding-right: 16px;
                     }
                 }
-                .modal-galeria {
-                    display: flex;
-                    overflow-x: auto;
-                    gap: 8px;
-                    width: 100%;
-                    scroll-snap-type: x mandatory;
-                    padding-bottom: 8px;
-                }
-                .modal-galeria::-webkit-scrollbar { height: 8px; }
-                .modal-galeria::-webkit-scrollbar-track { background: transparent; }
-                .modal-galeria::-webkit-scrollbar-thumb { background: var(--brand-main); border-radius: 4px; }
-                .galeria-img {
-                    flex: 0 0 100%;
-                    width: 100%;
-                    max-height: 400px;
-                    object-fit: cover;
-                    scroll-snap-align: center;
-                    border-radius: 8px;
-                }
                 .foto-count-badge {
                     position: absolute;
                     bottom: 8px;
@@ -282,32 +282,8 @@ export default function MyProducts() {
                     border-radius: 4px;
                     z-index: 2;
                 }
-                .galeria-container {
-                    position: relative;
-                    width: 100%;
-                }
-                .galeria-btn {
-                    position: absolute;
-                    top: 50%;
-                    transform: translateY(calc(-50% - 4px));
-                    background: rgba(0, 0, 0, 0.6);
-                    color: white;
-                    border: none;
-                    border-radius: 50%;
-                    width: 32px;
-                    height: 32px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    z-index: 10;
-                    transition: background 0.3s;
-                    font-size: 14px;
-                }
-                .galeria-btn:hover { background: rgba(0, 0, 0, 0.9); }
-                .galeria-btn-esq { left: 8px; }
-                .galeria-btn-dir { right: 8px; }
             `}</style>
+            
             <header className="my-products-header">
                 <div className="my-products-header-content">
                     <div className="my-products-title-area">
@@ -338,6 +314,7 @@ export default function MyProducts() {
                     </button>
                 </div>
             </header>
+
             {loading ? (
                 <div className="marketplace-status"><p>Carregando seus lotes...</p></div>
             ) : lotesAtuais.length === 0 ? (
@@ -350,7 +327,7 @@ export default function MyProducts() {
 
                         return (
                             <article key={lote.id} className="lote-card">
-                                <div className="lote-image-placeholder" onClick={() => setLoteAtivo(lote)}>
+                                <div className="lote-image-placeholder" onClick={() => abrirModalVisualizacao(lote)}>
                                     {fotoPrincipal ? (
                                         <img src={fotoPrincipal} alt={lote.titulo} className="lote-foto" />
                                     ) : (
@@ -380,7 +357,7 @@ export default function MyProducts() {
                                             </button>
                                         </>
                                     ) : (
-                                        <button type="button" className="btn-manage" onClick={() => setLoteAtivo(lote)}>Ver lote entregue</button>
+                                        <button type="button" className="btn-manage" onClick={() => abrirModalVisualizacao(lote)}>Ver lote entregue</button>
                                     )}
                                 </div>
                             </article>
@@ -389,30 +366,45 @@ export default function MyProducts() {
                 </div>
             )}
 
+            {/* MODAL DE VISUALIZAÇÃO COM O NOVO CARROSSEL */}
             {loteAtivo && (
-                <div className="modal-overlay" onClick={() => setLoteAtivo(null)}>
+                <div className="modal-overlay" onClick={fecharModalVisualizacao}>
                     <div className="modal-lote" onClick={(e) => e.stopPropagation()}>
-                        <button className="modal-fechar" onClick={() => setLoteAtivo(null)} aria-label="Fechar modal">✕</button>
-                        <div className="modal-imagem">
-                            {normalizeFotoUrls(loteAtivo).length > 0 ? (
-                                <div className="galeria-container">
-                                    {normalizeFotoUrls(loteAtivo).length > 1 && (
+                        <button className="modal-fechar" onClick={fecharModalVisualizacao} aria-label="Fechar modal">✕</button>
+                        
+                        <div className="modal-imagem carousel-container">
+                            {fotosModal.length > 0 ? (
+                                <>
+                                    <img src={fotosModal[imagemAtualIndex]} alt={`${loteAtivo.titulo} - Imagem ${imagemAtualIndex + 1}`} />
+
+                                    {fotosModal.length > 1 && (
                                         <>
-                                            <button className="galeria-btn galeria-btn-esq" onClick={(e) => { e.stopPropagation(); scrollGaleria('esq'); }}>❮</button>
-                                            <button className="galeria-btn galeria-btn-dir" onClick={(e) => { e.stopPropagation(); scrollGaleria('dir'); }}>❯</button>
+                                            <button className="carousel-btn prev" onClick={prevImage}>❮</button>
+                                            <button className="carousel-btn next" onClick={nextImage}>❯</button>
+
+                                            <div className="carousel-dots">
+                                                {fotosModal.map((_, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className={`dot ${index === imagemAtualIndex ? 'active' : ''}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setImagemAtualIndex(index);
+                                                        }}
+                                                    ></span>
+                                                ))}
+                                            </div>
                                         </>
                                     )}
-                                    <div className="modal-galeria" ref={galeriaRef}>
-                                        {normalizeFotoUrls(loteAtivo).map((url, idx) => (
-                                            <img key={idx} src={url} alt={`${loteAtivo.titulo} - foto ${idx + 1}`} className="galeria-img" />
-                                        ))}
-                                    </div>
-                                </div>
+                                </>
                             ) : (
                                 <div className="modal-sem-foto">📷</div>
                             )}
-                            <span className="categoria-badge">{loteAtivo.tipo_material || loteAtivo.categoria || 'Sem categoria'}</span>
+                            <span className="categoria-badge" style={{ zIndex: 20 }}>
+                                {loteAtivo.tipo_material || loteAtivo.categoria || 'Sem categoria'}
+                            </span>
                         </div>
+
                         <div className="modal-conteudo">
                             <h2 className="modal-titulo">{loteAtivo.titulo}</h2>
                             <div className="modal-detalhes-grid">
@@ -435,6 +427,7 @@ export default function MyProducts() {
                 </div>
             )}
 
+            {/* MODAL DE EDIÇÃO (MANTIDO INTACTO) */}
             {editingLote && (
                 <div className="modal-overlay" onClick={() => setEditingLote(null)}>
                     <div className="modal-edit-lote" onClick={(e) => e.stopPropagation()}>

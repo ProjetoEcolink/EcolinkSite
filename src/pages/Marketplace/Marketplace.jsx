@@ -20,6 +20,9 @@ export default function Marketplace() {
     const [comprandoLoteId, setComprandoLoteId] = useState(null);
     const [busca, setBusca] = useState('');
 
+    // Estado para controlar a imagem atual do carrossel no Modal
+    const [imagemAtualIndex, setImagemAtualIndex] = useState(0);
+
     const categorias = useMemo(() => ['Todos', ...TIPOS_MATERIAIS_PADRAO], []);
 
     useEffect(() => {
@@ -40,7 +43,7 @@ export default function Marketplace() {
     }, [categoriaAtiva, empresaLogadaId]);
 
     useEffect(() => {
-        const handleKey = (e) => e.key === 'Escape' && setLoteAtivo(null);
+        const handleKey = (e) => e.key === 'Escape' && fecharModal();
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
     }, []);
@@ -59,7 +62,6 @@ export default function Marketplace() {
                 .eq('status', 'disponivel')
                 .order('created_at', { ascending: false });
 
-            // Não filtra por categoria no Supabase, filtra só no front para garantir padronização
             const { data, error } = await query;
             if (error) throw error;
 
@@ -67,16 +69,15 @@ export default function Marketplace() {
             const categoriaAtivaNorm = normaliza(categoriaAtiva);
 
             const filtrados = (data || []).filter((lote) => {
-                // Filtra lotes da própria empresa
+
+                // RESTAURADO: Esconde os lotes do próprio usuário logado da vitrine!
                 if (empresaLogadaId && lote.empresa_id === empresaLogadaId) return false;
 
-                // Filtro local por categoria — garante que nenhum lote errado apareça
                 if (categoriaAtiva !== 'Todos') {
                     const cat = normaliza(lote.tipo_material) || normaliza(lote.categoria);
                     if (cat !== categoriaAtivaNorm) return false;
                 }
 
-                // Filtro de busca (título, descrição, empresa)
                 if (busca.trim()) {
                     const buscaNorm = normaliza(busca);
                     const titulo = normaliza(lote.titulo);
@@ -98,8 +99,14 @@ export default function Marketplace() {
         }
     };
 
-    const abrirModal = (lote) => setLoteAtivo(lote);
-    const fecharModal = () => setLoteAtivo(null);
+    const abrirModal = (lote) => {
+        setLoteAtivo(lote);
+        setImagemAtualIndex(0);
+    };
+
+    const fecharModal = () => {
+        setLoteAtivo(null);
+    };
 
     const comprarLote = async () => {
         if (!loteAtivo) return;
@@ -134,7 +141,7 @@ export default function Marketplace() {
 
             setEmpresaLogadaId(compradorEmpresaId);
             setLotes((prev) => prev.filter((lote) => lote.id !== loteAtivo.id));
-            setLoteAtivo(null);
+            fecharModal();
             alert('Compra finalizada. O lote foi marcado como entregue e aparece em Meus Produtos > Comprados.');
         } catch (error) {
             alert(`Erro ao comprar lote: ${error.message}`);
@@ -143,10 +150,21 @@ export default function Marketplace() {
         }
     };
 
+    // Lógica do Carrossel (Avançar e Voltar)
+    const fotosModal = loteAtivo ? normalizeFotoUrls(loteAtivo) : [];
+
+    const prevImage = (e) => {
+        e.stopPropagation();
+        setImagemAtualIndex((prev) => (prev === 0 ? fotosModal.length - 1 : prev - 1));
+    };
+
+    const nextImage = (e) => {
+        e.stopPropagation();
+        setImagemAtualIndex((prev) => (prev === fotosModal.length - 1 ? 0 : prev + 1));
+    };
+
     return (
         <div className="marketplace-page">
-
-            {/* ── HEADER COM FILTROS ── */}
             <header className="marketplace-header">
                 <div className="marketplace-header-inner">
                     <div className="marketplace-header-top">
@@ -163,7 +181,6 @@ export default function Marketplace() {
                         </span>
                     </div>
 
-                    {/* Barra de pesquisa acima dos filtros */}
                     <input
                         type="text"
                         className="marketplace-search"
@@ -199,7 +216,6 @@ export default function Marketplace() {
                 </div>
             </header>
 
-            {/* ── CONTEÚDO ── */}
             <main className="marketplace-body">
                 {loading ? (
                     <div className="marketplace-status">
@@ -230,7 +246,6 @@ export default function Marketplace() {
                                     onKeyDown={(e) => e.key === 'Enter' && abrirModal(lote)}
                                     aria-label={`Ver detalhes do lote ${lote.titulo}`}
                                 >
-                                    {/* Imagem */}
                                     <div className="lote-img-wrap">
                                         {fotoPrincipal ? (
                                             <img src={fotoPrincipal} alt={lote.titulo} className="lote-foto" />
@@ -242,11 +257,9 @@ export default function Marketplace() {
                                         )}
                                     </div>
 
-                                    {/* Corpo do card */}
                                     <div className="lote-body">
                                         <h3 className="lote-titulo">{lote.titulo}</h3>
 
-                                        {/* Peso em destaque — como "preço" no ML */}
                                         <p className="lote-peso">
                                             {lote.peso_kg
                                                 ? <><strong>{lote.peso_kg}</strong> kg</>
@@ -259,7 +272,6 @@ export default function Marketplace() {
                                         </p>
                                     </div>
 
-                                    {/* Rodapé do card */}
                                     <div className="lote-footer">
                                         <span className="lote-empresa">{lote.empresas?.nome || 'Empresa parceira'}</span>
                                         <span className="lote-local">{loteLocalLabel(lote)}</span>
@@ -271,7 +283,7 @@ export default function Marketplace() {
                 )}
             </main>
 
-            {/* ── MODAL ── */}
+            {/* MODAL COM CARROSSEL */}
             {loteAtivo && (
                 <div
                     className="modal-overlay"
@@ -289,21 +301,41 @@ export default function Marketplace() {
                             </svg>
                         </button>
 
-                        {/* Coluna imagem */}
-                        <div className="modal-imagem">
-                            {normalizeFotoUrls(loteAtivo)[0] ? (
-                                <img src={normalizeFotoUrls(loteAtivo)[0]} alt={loteAtivo.titulo} />
+                        <div className="modal-imagem carousel-container">
+                            {fotosModal.length > 0 ? (
+                                <>
+                                    <img src={fotosModal[imagemAtualIndex]} alt={`${loteAtivo.titulo} - Imagem ${imagemAtualIndex + 1}`} />
+
+                                    {fotosModal.length > 1 && (
+                                        <>
+                                            <button className="carousel-btn prev" onClick={prevImage}>❮</button>
+                                            <button className="carousel-btn next" onClick={nextImage}>❯</button>
+
+                                            <div className="carousel-dots">
+                                                {fotosModal.map((_, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className={`dot ${index === imagemAtualIndex ? 'active' : ''}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setImagemAtualIndex(index);
+                                                        }}
+                                                    ></span>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </>
                             ) : (
                                 <div className="modal-sem-foto">📷</div>
                             )}
                             {TIPOS_MATERIAIS_PADRAO.includes(loteAtivo.tipo_material || loteAtivo.categoria) && (
-                                <span className="categoria-badge">
+                                <span className="categoria-badge" style={{ zIndex: 20 }}>
                                     {loteAtivo.tipo_material || loteAtivo.categoria}
                                 </span>
                             )}
                         </div>
 
-                        {/* Coluna conteúdo */}
                         <div className="modal-conteudo">
 
                             <div className="modal-topo">
@@ -311,7 +343,6 @@ export default function Marketplace() {
                                 <p className="modal-empresa">{loteAtivo.empresas?.nome || 'Empresa parceira'}</p>
                             </div>
 
-                            {/* Peso em destaque */}
                             <div className="modal-peso-destaque">
                                 <span className="modal-peso-valor">
                                     {loteAtivo.peso_kg ? `${loteAtivo.peso_kg} kg` : 'Peso não informado'}
@@ -319,7 +350,6 @@ export default function Marketplace() {
                                 <span className="modal-peso-label">peso do lote</span>
                             </div>
 
-                            {/* Grid de detalhes */}
                             <div className="modal-detalhes-grid">
                                 <div className="modal-detalhe">
                                     <span className="detalhe-label">Localização</span>
@@ -339,7 +369,6 @@ export default function Marketplace() {
                                 </div>
                             </div>
 
-                            {/* Descrição */}
                             {(loteAtivo.descricao_resumida || loteAtivo.descricao_completa || loteAtivo.descricao) && (
                                 <div className="modal-descricao-bloco">
                                     {loteAtivo.descricao_resumida && (
@@ -357,16 +386,7 @@ export default function Marketplace() {
                                 </div>
                             )}
 
-                            {/* Ações */}
                             <div className="modal-acoes">
-                                <button
-                                    type="button"
-                                    className="btn-comprar-lote"
-                                    onClick={comprarLote}
-                                    disabled={comprandoLoteId === loteAtivo.id}
-                                >
-                                    {comprandoLoteId === loteAtivo.id ? 'Finalizando...' : 'Comprar lote'}
-                                </button>
 
                                 <div className="modal-contato">
                                     <div className="contato-info">
