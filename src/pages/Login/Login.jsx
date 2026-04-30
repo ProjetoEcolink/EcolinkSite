@@ -183,6 +183,30 @@ export default function Login() {
     };
     return (
         <div className="auth-page">
+            <style>{`
+                .auth-container .form-input {
+                    padding: 14px 16px;
+                    font-size: 1.05rem;
+                    min-height: 50px;
+                }
+                .auth-container .btn-submit {
+                    padding: 14px 16px;
+                    font-size: 1.1rem;
+                    min-height: 50px;
+                }
+                @media (max-width: 600px) {
+                    .auth-container .form-input {
+                        padding: 12px 14px;
+                        font-size: 1rem;
+                        min-height: 46px;
+                    }
+                    .auth-container .btn-submit {
+                        padding: 12px 14px;
+                        font-size: 1.05rem;
+                        min-height: 46px;
+                    }
+                }
+            `}</style>
             {errorModal.visible && (
                 <ErrorModal
                     message={errorModal.message}
@@ -225,7 +249,7 @@ export default function Login() {
 
                     <form className="auth-form" onSubmit={handleSubmit}>
                         <div className="form-group">
-                            <label className="form-label">E-mail Corporativo</label>
+                            <label className="form-label">E-mail</label>
                             <input
                                 type="email"
                                 name="email"
@@ -257,7 +281,7 @@ export default function Login() {
                         </div>
 
                         <button type="submit" className="btn-submit" disabled={loading}>
-                            {loading ? 'Autenticando...' : 'Entrar na Plataforma'}
+                            {loading ? 'Autenticando...' : 'Login'}
                         </button>
 
                         <p className="auth-footer-link">

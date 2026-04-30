@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import { getOrCreateEmpresaForUser } from '../../utils/empresa';
@@ -53,6 +53,14 @@ export default function MyProducts() {
     const totalAnunciados = lotes.filter(l => l.status !== 'entregue').length;
     const totalVendidos = lotes.filter(l => l.status === 'entregue').length;
     const totalComprados = lotesComprados.length;
+
+    const galeriaRef = useRef(null);
+    const scrollGaleria = (direcao) => {
+        if (galeriaRef.current) {
+            const scrollAmount = galeriaRef.current.clientWidth;
+            galeriaRef.current.scrollBy({ left: direcao === 'esq' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+        }
+    };
 
     useEffect(() => {
         const userStr = localStorage.getItem('usuario');
@@ -231,6 +239,75 @@ export default function MyProducts() {
 
     return (
         <div className="my-products-page">
+            <style>{`
+                .my-products-page {
+                    max-width: 1320px;
+                    margin: 0 auto;
+                    padding-left: 24px;
+                    padding-right: 24px;
+                }
+                @media (max-width: 850px) {
+                    .my-products-page {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                    }
+                }
+                .modal-galeria {
+                    display: flex;
+                    overflow-x: auto;
+                    gap: 8px;
+                    width: 100%;
+                    scroll-snap-type: x mandatory;
+                    padding-bottom: 8px;
+                }
+                .modal-galeria::-webkit-scrollbar { height: 8px; }
+                .modal-galeria::-webkit-scrollbar-track { background: transparent; }
+                .modal-galeria::-webkit-scrollbar-thumb { background: var(--brand-main); border-radius: 4px; }
+                .galeria-img {
+                    flex: 0 0 100%;
+                    width: 100%;
+                    max-height: 400px;
+                    object-fit: cover;
+                    scroll-snap-align: center;
+                    border-radius: 8px;
+                }
+                .foto-count-badge {
+                    position: absolute;
+                    bottom: 8px;
+                    right: 8px;
+                    background: rgba(0,0,0,0.65);
+                    color: white;
+                    font-size: 0.75rem;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    z-index: 2;
+                }
+                .galeria-container {
+                    position: relative;
+                    width: 100%;
+                }
+                .galeria-btn {
+                    position: absolute;
+                    top: 50%;
+                    transform: translateY(calc(-50% - 4px));
+                    background: rgba(0, 0, 0, 0.6);
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    z-index: 10;
+                    transition: background 0.3s;
+                    font-size: 14px;
+                }
+                .galeria-btn:hover { background: rgba(0, 0, 0, 0.9); }
+                .galeria-btn-esq { left: 8px; }
+                .galeria-btn-dir { right: 8px; }
+            `}</style>
             <header className="my-products-header">
                 <div className="my-products-header-content">
                     <div className="my-products-title-area">
@@ -279,6 +356,9 @@ export default function MyProducts() {
                                     ) : (
                                         <span className="image-icon">📷</span>
                                     )}
+                                    {fotoUrls.length > 1 && (
+                                        <span className="foto-count-badge">+{fotoUrls.length - 1} foto(s)</span>
+                                    )}
                                     <span className="categoria-badge">{lote.tipo_material || lote.categoria || 'Sem categoria'}</span>
                                 </div>
 
@@ -314,8 +394,20 @@ export default function MyProducts() {
                     <div className="modal-lote" onClick={(e) => e.stopPropagation()}>
                         <button className="modal-fechar" onClick={() => setLoteAtivo(null)} aria-label="Fechar modal">✕</button>
                         <div className="modal-imagem">
-                            {normalizeFotoUrls(loteAtivo)[0] ? (
-                                <img src={normalizeFotoUrls(loteAtivo)[0]} alt={loteAtivo.titulo} />
+                            {normalizeFotoUrls(loteAtivo).length > 0 ? (
+                                <div className="galeria-container">
+                                    {normalizeFotoUrls(loteAtivo).length > 1 && (
+                                        <>
+                                            <button className="galeria-btn galeria-btn-esq" onClick={(e) => { e.stopPropagation(); scrollGaleria('esq'); }}>❮</button>
+                                            <button className="galeria-btn galeria-btn-dir" onClick={(e) => { e.stopPropagation(); scrollGaleria('dir'); }}>❯</button>
+                                        </>
+                                    )}
+                                    <div className="modal-galeria" ref={galeriaRef}>
+                                        {normalizeFotoUrls(loteAtivo).map((url, idx) => (
+                                            <img key={idx} src={url} alt={`${loteAtivo.titulo} - foto ${idx + 1}`} className="galeria-img" />
+                                        ))}
+                                    </div>
+                                </div>
                             ) : (
                                 <div className="modal-sem-foto">📷</div>
                             )}

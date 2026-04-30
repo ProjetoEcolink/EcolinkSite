@@ -405,25 +405,77 @@ export default function Register() {
 
     return (
         <div className="auth-page">
-            <button className="auth-theme-toggle" onClick={toggleTheme} type="button" aria-label="Mudar tema">
-                <ThemeIcon theme={theme} />
-            </button>
+                <style>{`
+                @keyframes profileFadeSlide {
+                    from { opacity: 0; transform: translateY(4px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-profile-switch {
+                    animation: profileFadeSlide 0.3s ease-out forwards;
+                    display: inline-block;
+                }
+                .perfil-toggle-btn {
+                    transition: all 0.3s ease;
+                }
+                .auth-page {
+                    padding-top: 80px !important;
+                    padding-bottom: 40px !important;
+                }
+                .auth-content {
+                    margin-top: 0 !important;
+                }
+                .auth-container {
+                    max-width: 600px;
+                    width: 100%;
+                }
+                .auth-container .form-input {
+                    width: 100%;
+                    padding: 14px 16px;
+                    font-size: 1.05rem;
+                    min-height: 50px;
+                }
+                .auth-container .password-input-wrapper .form-input {
+                    padding-right: 48px;
+                }
+                .auth-container .btn-submit {
+                    padding: 14px 16px;
+                    font-size: 1.1rem;
+                    min-height: 50px;
+                }
+                @media (max-width: 600px) {
+                    .auth-container .form-input {
+                        padding: 12px 14px;
+                        font-size: 1rem;
+                        min-height: 46px;
+                    }
+                    .auth-container .btn-submit {
+                        padding: 12px 14px;
+                        font-size: 1.05rem;
+                        min-height: 46px;
+                    }
+                }
+            `}</style>
+            <header className="auth-topbar">
+                <button
+                    className="auth-back-btn"
+                    onClick={() => navigate('/home')}
+                    title="Voltar"
+                    aria-label="Voltar"
+                    type="button"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                    <span>Voltar</span>
+                </button>
 
-            <button
-                className="auth-back-btn"
-                onClick={() => navigate('/home')}
-                title="Voltar"
-                aria-label="Voltar"
-                type="button"
-            >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-                <span>Voltar</span>
-            </button>
+                <button onClick={toggleTheme} aria-label="Mudar tema" type="button" className="auth-theme-toggle">
+                    <ThemeIcon theme={theme} />
+                </button>
+            </header>
 
-            <div className="auth-container">
-                <div className="auth-brand">Eco<span className="text-eco">Link</span></div>
+            <main className="auth-content">
+                <div className="auth-container">
 
                 <div className="auth-header">
                     <h2>Crie sua conta</h2>
@@ -436,30 +488,29 @@ export default function Register() {
                         className={`perfil-toggle-btn ${perfil === 'user' ? 'active' : ''}`}
                         onClick={() => handleSelectPerfil('user')}
                     >
-                        User
+                        Pessoa Física
                     </button>
                     <button
                         type="button"
                         className={`perfil-toggle-btn ${perfil === 'business' ? 'active' : ''}`}
                         onClick={() => handleSelectPerfil('business')}
                     >
-                        Business
+                        Empresa
                     </button>
                 </div>
 
-                <p className="perfil-desc">
+                <p className="perfil-desc animate-profile-switch" key={perfil}>
                     {perfil === 'user'
                         ? 'Usuário individual que deseja vender ou destinar equipamentos com segurança.'
-                        : 'Conta Business para operações corporativas com foco em compliance ESG.'}
+                        : 'Conta Empresarial para operações corporativas com foco em compliance ESG.'}
                 </p>
 
                 <form onSubmit={handleSubmit} noValidate>
                     {/* Nome */}
                     <div className="form-group">
                         <label className="form-label">
-                            <span>{perfil === 'business' ? 'Razão Social' : 'Nome Completo'}</span>
-                            <span className={`char-count ${formData.nome.length >= 100 ? 'char-count--limit' : ''}`}>
-                                {formData.nome.length}/100
+                            <span className="animate-profile-switch" key={perfil}>
+                                {perfil === 'business' ? 'Razão Social' : 'Nome Completo'}
                             </span>
                         </label>
                         <input
@@ -473,11 +524,31 @@ export default function Register() {
                         />
                     </div>
 
+                {/* Email */}
+                <div className="form-group">
+                    <label className="form-label">
+                        <span className="animate-profile-switch" key={perfil}>
+                            {perfil === 'business' ? 'E-mail Corporativo' : 'E-mail'}
+                        </span>
+                    </label>
+                    <input
+                        type="email"
+                        name="email"
+                        className={inputClass('email')}
+                        placeholder={perfil === 'business' ? 'contato@empresa.com.br' : 'seu@email.com'}
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        maxLength={254}
+                    />
+                </div>
+
                     {/* CPF/CNPJ + Telefone */}
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">
-                                <span>{perfil === 'business' ? 'CNPJ' : 'CPF'}</span>
+                                <span className="animate-profile-switch" key={perfil}>
+                                    {perfil === 'business' ? 'CNPJ' : 'CPF'}
+                                </span>
                             </label>
                             <input
                                 type="text"
@@ -491,9 +562,6 @@ export default function Register() {
                         <div className="form-group">
                             <label className="form-label">
                                 <span>Telefone</span>
-                                <span className={`char-count ${onlyDigits(formData.telefone).length === 0 ? '' : onlyDigits(formData.telefone).length < 11 ? 'char-count--warn' : 'char-count--ok'}`}>
-                                    {onlyDigits(formData.telefone).length}/11
-                                </span>
                             </label>
                             <input
                                 type="text"
@@ -507,40 +575,18 @@ export default function Register() {
                         </div>
                     </div>
 
-                    {/* Email */}
-                    <div className="form-group">
-                        <label className="form-label">
-                            <span>{perfil === 'business' ? 'E-mail Corporativo' : 'E-mail'}</span>
-                            <span className={`char-count ${formData.email.length >= 254 ? 'char-count--limit' : ''}`}>
-                                {formData.email.length}/254
-                            </span>
-                        </label>
-                        <input
-                            type="email"
-                            name="email"
-                            className={inputClass('email')}
-                            placeholder={perfil === 'business' ? 'contato@empresa.com.br' : 'seu@email.com'}
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            maxLength={254}
-                        />
-                    </div>
-
                     {/* Senhas */}
                     <div className="auth-row-inputs">
                         <div className="form-group">
                             <label className="form-label">
                                 <span>Senha</span>
-                                <span className={`char-count ${formData.senha.length > 0 && !validatePasswordStrength(formData.senha) ? 'char-count--ok' : formData.senha.length > 0 ? 'char-count--warn' : ''}`}>
-                                    {formData.senha.length}/{PASSWORD_MAX_LENGTH}
-                                </span>
                             </label>
                             <div className="password-input-wrapper">
                                 <input
                                     type={mostrarSenha ? 'text' : 'password'}
                                     name="senha"
                                     className={`${inputClass('senha')} password-input`}
-                                    placeholder="Min. 8, max. 24, com A-z e 0-9"
+                                placeholder="••••••••"
                                     value={formData.senha}
                                     onChange={handleInputChange}
                                     maxLength={PASSWORD_MAX_LENGTH}
@@ -560,18 +606,13 @@ export default function Register() {
                         <div className="form-group">
                             <label className="form-label">
                                 <span>Confirmar</span>
-                                {formData.confirmarSenha.length > 0 && (
-                                    <span className={`char-count ${formData.confirmarSenha === formData.senha ? 'char-count--ok' : 'char-count--warn'}`}>
-                                        {formData.confirmarSenha === formData.senha ? '✓ coincidem' : '✗ diferente'}
-                                    </span>
-                                )}
                             </label>
                             <div className="password-input-wrapper">
                                 <input
                                     type={mostrarConfirmar ? 'text' : 'password'}
                                     name="confirmarSenha"
                                     className={`${inputClass('confirmarSenha')} password-input`}
-                                    placeholder="Repita a senha"
+                                placeholder="••••••••"
                                     value={formData.confirmarSenha}
                                     onChange={handleInputChange}
                                     maxLength={PASSWORD_MAX_LENGTH}
@@ -601,6 +642,7 @@ export default function Register() {
                     </p>
                 </form>
             </div>
+            </main>
 
             {/* Modal de Erro */}
             {showErrorModal && (

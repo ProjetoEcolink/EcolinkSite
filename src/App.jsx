@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 
+import ScrollToTop from './components/ScrollToTop'; // Ajuste o caminho se necessário
+
 // Seções Home
 import HeroSection from './sections/HeroSection/HeroSection';
 import ProblemSection from './sections/ProblemSection/ProblemSection';
@@ -56,6 +58,7 @@ const LayoutHandler = ({ children }) => {
 function App() {
     return (
         <BrowserRouter>
+                <ScrollToTop />
             <LayoutHandler>
                 <Routes>
                     {/* Raiz e Home */}

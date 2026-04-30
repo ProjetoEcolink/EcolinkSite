@@ -6,7 +6,6 @@ import {
     buildLegacyLotePayload,
     buildLotePayload,
     MAX_FOTOS_LOTE,
-    normalizeMateriaisLote,
     sanitizePesoInput,
     TIPOS_MATERIAIS_PADRAO,
 } from '../../utils/loteUtils';
@@ -131,12 +130,10 @@ export default function Dashboard() {
         tipo_material: 'Notebook',
         peso_kg: '',
         numero_itens: '',
-        materiais_lote: '',
         local_lote: '',
         cidade: '',
         estado: '',
-        descricao_resumida: '',
-        descricao_completa: '',
+        descricao: '',
     });
 
     const [files, setFiles] = useState([]);
@@ -272,17 +269,17 @@ export default function Dashboard() {
         }
 
         if (!files.length) {
-            alert('Adicione pelo menos 1 foto do lote.');
+            alert('Adicione pelo menos 1 foto do produto.');
             return;
         }
 
         if (!lote.local_lote) {
-            alert('Preencha o local pelo botão "Usar minha localização".');
+            alert('Informe o local do produto.');
             return;
         }
 
         if (!lote.numero_itens) {
-            alert('Informe a quantidade de itens do lote.');
+            alert('Informe a quantidade de itens do produto.');
             return;
         }
 
@@ -291,8 +288,8 @@ export default function Dashboard() {
             return;
         }
 
-        if (!normalizeMateriaisLote(lote.materiais_lote).length) {
-            alert('Informe todos os materiais contidos no lote.');
+        if (!lote.descricao.trim()) {
+            alert('Informe a descrição do produto.');
             return;
         }
 
@@ -301,11 +298,19 @@ export default function Dashboard() {
             const empresaId = await getOrCreateEmpresaForUser(usuarioData);
             const fotoUrls = await uploadLoteImages(files);
 
-            const payloadNovo = buildLotePayload(lote, empresaId, fotoUrls);
+            // Mocking legacy utils adaptation. In a real scenario, utilities must be updated to accept single 'descricao'
+            const loteForPayload = {
+                ...lote,
+                materiais_lote: lote.descricao, // Mapping single desc to materials for legacy util support
+                descricao_resumida: lote.descricao.substring(0, 180),
+                descricao_completa: lote.descricao
+            };
+
+            const payloadNovo = buildLotePayload(loteForPayload, empresaId, fotoUrls);
             const { error: erroNovo } = await supabase.from('lotes').insert([payloadNovo]);
 
             if (erroNovo) {
-                const payloadLegado = buildLegacyLotePayload(lote, empresaId, fotoUrls);
+                const payloadLegado = buildLegacyLotePayload(loteForPayload, empresaId, fotoUrls);
                 const { error: erroLegado } = await supabase.from('lotes').insert([payloadLegado]);
                 if (erroLegado) {
                     throw new Error(erroNovo.message || erroLegado.message);
@@ -318,12 +323,10 @@ export default function Dashboard() {
                 tipo_material: materialOptions[0] || 'Notebook',
                 peso_kg: '',
                 numero_itens: '',
-                materiais_lote: '',
                 local_lote: '',
                 cidade: '',
                 estado: '',
-                descricao_resumida: '',
-                descricao_completa: '',
+                descricao: '',
             });
             setFiles([]);
         } catch (error) {
@@ -337,10 +340,8 @@ export default function Dashboard() {
         lote.titulo.trim() &&
         lote.tipo_material &&
         lote.numero_itens &&
-        normalizeMateriaisLote(lote.materiais_lote).length > 0 &&
         lote.local_lote &&
-        lote.descricao_resumida.trim() &&
-        lote.descricao_completa.trim() &&
+        lote.descricao.trim() &&
         files.length > 0;
 
     return (
@@ -348,8 +349,8 @@ export default function Dashboard() {
             <div className="Dashboard-page">
                 <div className="Dashboard-container">
                     <div className="Dashboard-header">
-                        <h2>Anunciar Novo <span className="text-highlight">Lote</span></h2>
-                        <p>Cadastre seu lote com dados completos. A localização é detectada automaticamente via GPS e API.</p>
+                        <h2>Anunciar Novo <span className="text-highlight">Eletronico</span></h2>
+                        <p>Cadastre seu produto com dados completos. A localização é detectada automaticamente via GPS e API.</p>
                     </div>
 
                     <form className="Dashboard-form" onSubmit={handleSubmit}>
@@ -488,7 +489,7 @@ export default function Dashboard() {
                         <section className="form-section">
                             <div className="form-section-header">
                                 <h3>Localização</h3>
-                                <p>O endereço é preenchido automaticamente e bloqueado para manter consistência.</p>
+                                <p>Preencha manualmente ou use a localização automática.</p>
                             </div>
 
                             <div className="form-row">
@@ -500,26 +501,43 @@ export default function Dashboard() {
                                             name="local_lote"
                                             className="form-input"
                                             value={lote.local_lote}
-                                            placeholder="Clique em usar minha localização"
-                                            readOnly
-                                            disabled
+                                            placeholder="Ex: Rua das Flores, 123 - Centro, São Paulo - SP"
+                                            onChange={handleInputChange}
+                                            disabled={isSubmitting}
                                         />
                                         <button type="button" className="btn-localizar" onClick={preencherLocalizacao} disabled={isLocating || isSubmitting}>
                                             {isLocating ? 'Buscando...' : 'Usar minha localização'}
                                         </button>
                                     </div>
-                                    <span className="form-help">Se a localização estiver desatualizada, toque novamente em "Usar minha localização".</span>
+                                    <span className="form-help">Você pode digitar o endereço completo ou buscar automaticamente.</span>
                                 </div>
                             </div>
 
                             <div className="form-row">
                                 <div className="form-group flex-1">
                                     <label className="form-label">Cidade</label>
-                                    <input type="text" name="cidade" className="form-input" value={lote.cidade} readOnly disabled />
+                                    <input 
+                                        type="text" 
+                                        name="cidade" 
+                                        className="form-input" 
+                                        value={lote.cidade} 
+                                        onChange={handleInputChange} 
+                                        placeholder="Ex: São Paulo"
+                                        disabled={isSubmitting} 
+                                    />
                                 </div>
                                 <div className="form-group flex-1">
                                     <label className="form-label">Estado (UF)</label>
-                                    <input type="text" name="estado" className="form-input" value={lote.estado} readOnly disabled />
+                                    <input 
+                                        type="text" 
+                                        name="estado" 
+                                        className="form-input" 
+                                        value={lote.estado} 
+                                        onChange={handleInputChange} 
+                                        placeholder="Ex: SP"
+                                        maxLength={2}
+                                        disabled={isSubmitting} 
+                                    />
                                 </div>
                             </div>
                         </section>
@@ -527,46 +545,17 @@ export default function Dashboard() {
                         <section className="form-section">
                             <div className="form-section-header">
                                 <h3>Descrição do lote</h3>
-                                <p>Informe todos os materiais e os detalhes importantes para negociação.</p>
+                                <p>Informe detalhes importantes como estado dos itens, marcas e observações para negociação.</p>
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Materiais no lote (todos)</label>
+                                <label className="form-label">Descrição detalhada</label>
                                 <textarea
-                                    name="materiais_lote"
+                                    name="descricao"
                                     className="form-input form-textarea"
-                                    placeholder="Ex:\nNotebooks Dell\nMonitores Samsung\nCabos HDMI"
-                                    rows="4"
-                                    value={lote.materiais_lote}
-                                    onChange={handleInputChange}
-                                    required
-                                    disabled={isSubmitting}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Descrição resumida</label>
-                                <input
-                                    type="text"
-                                    name="descricao_resumida"
-                                    className="form-input"
-                                    placeholder="Resumo rápido para o card do marketplace"
-                                    value={lote.descricao_resumida}
-                                    onChange={handleInputChange}
-                                    maxLength={180}
-                                    required
-                                    disabled={isSubmitting}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Descrição completa</label>
-                                <textarea
-                                    name="descricao_completa"
-                                    className="form-input form-textarea"
-                                    placeholder="Detalhes técnicos, estado dos itens e observações"
-                                    rows="5"
-                                    value={lote.descricao_completa}
+                                    placeholder="Detalhes técnicos, lista de materiais, estado de conservação, etc."
+                                    rows="6"
+                                    value={lote.descricao}
                                     onChange={handleInputChange}
                                     required
                                     disabled={isSubmitting}
