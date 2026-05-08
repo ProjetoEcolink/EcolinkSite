@@ -354,6 +354,7 @@ export default function ForgotPassword() {
                             <p>
                                 {infoMsg || 'Se o e-mail existir na plataforma, voce recebera o link de recuperacao em instantes.'}
                             </p>
+                            <p>Caso nao encontre o e-mail de imediato, verifique tambem a caixa de spam.</p>
                         </div>
                         <div className="auth-form">
                             <button type="button" className="btn-submit" onClick={() => setStep(1)}>
