@@ -1,10 +1,7 @@
 ﻿import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import './HeroSection.css';
 
 export default function HeroSection() {
-    const navigate = useNavigate();
-
     return (
         <section id="home" className="hero-section">
             <div className="hero-floating-elements">

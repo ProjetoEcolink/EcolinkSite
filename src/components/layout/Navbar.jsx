@@ -176,7 +176,6 @@ export default function Navbar() {
     const isActive = (path) => location.pathname === path;
     const isLogado = !!localStorage.getItem('usuario');
 
-    // Ao clicar no logo, manda direto para a raiz (Marketplace)
     const handleLogoClick = () => navigate('/');
 
     const avancarTutorial = () => {
@@ -196,7 +195,7 @@ export default function Navbar() {
     const confirmarLogout = () => {
         localStorage.removeItem('usuario');
         setMostrarModalLogout(false);
-        navigate('/'); // Após sair, volta pra vitrine
+        navigate('/');
     };
 
     return (
@@ -209,11 +208,10 @@ export default function Navbar() {
 
                     <div className="nav-menu">
                         <div className="nav-links">
-                            {/* Mercado: Aponta para a raiz (/) e fica ativo se for a home ou /marketplace */}
                             <Link 
                                 id="tour-marketplace" 
-                                to="/" 
-                                className={`nav-link-btn ${isActive('/') || isActive('/marketplace') ? 'nav-link-active' : ''}`}
+                                to={isLogado ? "/marketplace" : "/login"}
+                                className={`nav-link-btn ${isActive('/marketplace') ? 'nav-link-active' : ''}`}
                             >
                                 Mercado
                             </Link>

@@ -20,22 +20,6 @@ function loteLocalLabel(lote) {
     return 'Local não informado';
 }
 
-function formatDate(dateStr) {
-    if (!dateStr) return '—';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-function getStatusBadge(status) {
-    const statusMap = {
-        disponivel: { label: 'Disponível', color: '#00b36b' },
-        entregue: { label: 'Entregue', color: '#3b82f6' },
-        vendido: { label: 'Vendido', color: '#8b5cf6' },
-    };
-    const s = statusMap[status] || { label: status, color: '#6b7280' };
-    return s;
-}
-
 export default function MyProducts() {
     const [empresaId, setEmpresaId] = useState(null);
     const [lotes, setLotes] = useState([]);
@@ -109,7 +93,9 @@ export default function MyProducts() {
             if (userStr) {
                 try {
                     email = JSON.parse(userStr).email;
-                } catch {}
+                } catch {
+                    email = '';
+                }
             }
             const { data, error } = await supabase
                 .from('lotes')

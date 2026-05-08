@@ -68,10 +68,19 @@ npm -v
 Na pasta do projeto:
 
 ```bash
+cp .env.example .env.local
+nano .env.local
 npm ci
 npm run build
 sudo mkdir -p /var/www/ecolink/dist
 sudo rsync -a --delete dist/ /var/www/ecolink/dist/
+```
+
+O `.env.local` precisa ter o projeto Supabase ativo:
+
+```bash
+VITE_SUPABASE_URL=https://seu-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
 ```
 
 ## 5. API

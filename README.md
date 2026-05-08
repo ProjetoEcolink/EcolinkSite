@@ -1,89 +1,56 @@
-<<<<<<< HEAD
-# Getting Started with Create React App
+# EcoLink Site
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Frontend React + Vite com integracao direta com Supabase. A pasta `api/` contem uma API FastAPI separada, preparada para rodar via Docker na VM.
 
-## Available Scripts
+## Comandos principais
 
-In the project directory, you can run:
+```bash
+npm ci
+npm run dev
+npm run build
+npm run preview
+npm run lint
+```
 
-### `npm start`
+Em desenvolvimento, o Vite abre em `http://localhost:5173`.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Variaveis de ambiente
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Crie um `.env.local` a partir do `.env.example`:
 
-### `npm test`
+```bash
+VITE_SUPABASE_URL=https://seu-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Sem essas variaveis, o app usa a configuracao antiga hardcoded. Se o projeto antigo do Supabase estiver removido, pausado ou com URL incorreta, login, cadastro, recuperacao de senha, marketplace, upload e perfil vao falhar.
 
-### `npm run build`
+## Rotas do frontend
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```text
+/                 Redireciona para /home
+/home             Home publica
+/marketplace      Area de lotes, somente logado
+/dashboard        Cadastro de novo lote, somente logado
+/meus-produtos    Lotes do usuario, somente logado
+/profile          Perfil, somente logado
+/login            Login
+/register         Cadastro
+/esqueci-senha    Recuperacao de senha
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Ao acessar `/`, o usuario e redirecionado para `/home`. Ao acessar `/home`, ve a Home publica. Ao fazer login, o usuario vai para `/marketplace`.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## API
 
-### `npm run eject`
+```bash
+cd api
+docker compose up -d --build db api
+docker compose exec api alembic upgrade head
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Em producao, a API fica exposta apenas localmente em `127.0.0.1:8000`, e o Nginx publica `/api/`.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Deploy
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-=======
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
->>>>>>> master
+Siga o checklist em `DEPLOY_UBUNTU_NGINX.md` para publicar na VM Ubuntu com Nginx, Cloudflare e o dominio `ecolink.eco.br`.

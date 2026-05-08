@@ -1,28 +1,23 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
-// Layout
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import ScrollToTop from './components/ScrollToTop';
 
-import ScrollToTop from './components/ScrollToTop'; // Ajuste o caminho se necessário
-
-// Seções Home
 import HeroSection from './sections/HeroSection/HeroSection';
 import ProblemSection from './sections/ProblemSection/ProblemSection';
 import FeaturesSection from './sections/FeaturesSection/FeaturesSection';
 import AboutSection from './sections/AboutSection/AboutSection';
 
-// Páginas
 import Login from './pages/Login/Login';
 import Register from './pages/Register/Register';
 import ForgotPassword from './pages/ForgotPassword/ForgotPassword';
 import Profile from './pages/Profile/Profile';
 import Marketplace from './pages/Marketplace/Marketplace';
-import Dashboard from './pages/Dashboard/Dashboard'; // CAMINHO CORRIGIDO AQUI
+import Dashboard from './pages/Dashboard/Dashboard';
 import MyProducts from './pages/MyProducts/MyProducts';
 
-// Landing Page (Página Institucional)
 const LandingPage = () => (
     <>
         <section id="home"><HeroSection /></section>
@@ -32,14 +27,12 @@ const LandingPage = () => (
     </>
 );
 
-// Rota protegida — redireciona pro login se não logado
 const ProtectedRoute = ({ children }) => {
     const isLoggedIn = !!localStorage.getItem('usuario');
     if (!isLoggedIn) return <Navigate to="/login" replace />;
     return children;
 };
 
-// Gerencia a exibição da Navbar/Footer
 const LayoutHandler = ({ children }) => {
     const location = useLocation();
     const hideLayout = ['/login', '/register', '/esqueci-senha'].includes(location.pathname);
@@ -61,22 +54,19 @@ function App() {
             <ScrollToTop />
             <LayoutHandler>
                 <Routes>
-                    {/* A MÁGICA ACONTECE AQUI */}
-                    {/* 1. Raiz do site agora é o Marketplace! */}
-                    <Route path="/" element={<Marketplace />} />
-
-                    {/* 2. Landing Page Institucional movida para /home */}
+                    <Route path="/" element={<Navigate to="/home" replace />} />
                     <Route path="/home" element={<LandingPage />} />
 
-                    {/* 3. Redireciona links antigos de /marketplace para a raiz (evita páginas duplicadas) */}
-                    <Route path="/marketplace" element={<Navigate to="/" replace />} />
+                    <Route path="/marketplace" element={
+                        <ProtectedRoute>
+                            <Marketplace />
+                        </ProtectedRoute>
+                    } />
 
-                    {/* Auth */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/esqueci-senha" element={<ForgotPassword />} />
 
-                    {/* Protegido (Só acessa se logado) */}
                     <Route path="/dashboard" element={
                         <ProtectedRoute>
                             <Dashboard />
@@ -95,11 +85,10 @@ function App() {
                         </ProtectedRoute>
                     } />
 
-                    {/* 404 */}
                     <Route path="*" element={
                         <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>
                             <h1>404</h1>
-                            <p>Página não encontrada</p>
+                            <p>Pagina nao encontrada</p>
                         </div>
                     } />
                 </Routes>

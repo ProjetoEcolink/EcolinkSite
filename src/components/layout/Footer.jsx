@@ -31,7 +31,7 @@ export default function Footer() {
   const handleScroll = (e, hash) => {
     e.preventDefault();
     
-    const rotaDaLandingPage = '/home'; 
+    const rotaDaLandingPage = '/';
 
     if (location.pathname === rotaDaLandingPage) {
       // Se já está na página certa, só rola a tela suavemente

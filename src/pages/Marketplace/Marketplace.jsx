@@ -396,6 +396,14 @@ export default function Marketplace() {
                             )}
 
                             <div className="modal-acoes">
+                                <button
+                                    type="button"
+                                    className="btn-comprar-lote"
+                                    onClick={comprarLote}
+                                    disabled={comprandoLoteId === loteAtivo.id}
+                                >
+                                    {comprandoLoteId === loteAtivo.id ? 'Finalizando compra...' : 'Comprar lote'}
+                                </button>
 
                                 <div className="modal-contato">
                                     <div className="contato-info">

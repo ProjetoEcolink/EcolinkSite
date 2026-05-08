@@ -45,7 +45,9 @@ export function normalizeFotoUrls(lote) {
             try {
                 const parsed = JSON.parse(lote.fotos_urls);
                 if (Array.isArray(parsed)) return parsed.filter(Boolean);
-            } catch { }
+            } catch {
+                return [];
+            }
         }
     }
 

@@ -164,7 +164,7 @@ export default function Login() {
             const localResult = tryLocalLogin();
             if (localResult.ok) {
                 setLoading(false);
-                navigate('/');
+                navigate('/marketplace');
                 return;
             }
 
@@ -179,7 +179,7 @@ export default function Login() {
         const usuarioParaSalvar = buildLocalUserFromSupabase(data.user);
         persistAuthenticatedUser(usuarioParaSalvar);
         setLoading(false);
-        navigate('/');
+        navigate('/marketplace');
     };
     return (
         <div className="auth-page">

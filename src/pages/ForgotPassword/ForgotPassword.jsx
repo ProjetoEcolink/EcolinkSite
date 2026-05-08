@@ -96,16 +96,21 @@ function getAuthUrlParam(name) {
 function describeRecoveryEmailError(error) {
     const parts = [error?.message, error?.code, error?.status ? `status ${error.status}` : ''].filter(Boolean);
     const details = parts.length ? ` (${parts.join(' | ')})` : '';
+    const message = error?.message?.toLowerCase() || '';
 
-    if (error?.message?.toLowerCase().includes('rate limit')) {
+    if (message.includes('failed to fetch') || message.includes('network')) {
+        return `Nao foi possivel conectar ao Supabase. Confira se VITE_SUPABASE_URL aponta para um projeto ativo e se o dominio do projeto resolve DNS.${details}`;
+    }
+
+    if (message.includes('rate limit')) {
         return `Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.${details}`;
     }
 
-    if (error?.message?.toLowerCase().includes('redirect')) {
+    if (message.includes('redirect')) {
         return `URL de redirecionamento nao autorizada no Supabase. Confira se ${window.location.origin}/esqueci-senha esta em Authentication > URL Configuration.${details}`;
     }
 
-    if (error?.message?.toLowerCase().includes('email')) {
+    if (message.includes('email')) {
         return `Falha no provedor de e-mail do Supabase. Confira SMTP, template de recuperacao e limites do projeto.${details}`;
     }
 
